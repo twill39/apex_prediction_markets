@@ -24,6 +24,7 @@ class CopyTradingSettings(BaseModel):
     """Copy trading strategy settings"""
     max_position_size: float = Field(default=1000.0, description="Maximum position size per trade")
     max_traders: int = Field(default=10, description="Maximum number of traders to copy")
+    use_kalshi: bool = Field(default=False, description="Enable Kalshi WebSocket")
 
 
 class MarketMakingSettings(BaseModel):
@@ -45,6 +46,8 @@ class SimulatorSettings(BaseModel):
     """Simulator settings"""
     slippage: float = Field(default=0.001, description="Simulated slippage (0.1%)")
     latency_ms: int = Field(default=50, description="Simulated latency in milliseconds")
+    use_polymarket: bool = Field(default=True, description="Enable Polymarket WebSocket")
+    use_kalshi: bool = Field(default=True, description="Enable Kalshi WebSocket")
 
 
 class Settings(BaseModel):
@@ -69,7 +72,8 @@ class Settings(BaseModel):
             ),
             copy_trading=CopyTradingSettings(
                 max_position_size=float(os.getenv("COPY_TRADING_MAX_POSITION_SIZE", "1000")),
-                max_traders=int(os.getenv("COPY_TRADING_MAX_TRADERS", "10"))
+                max_traders=int(os.getenv("COPY_TRADING_MAX_TRADERS", "10")),
+                use_kalshi=os.getenv("COPY_TRADING_USE_KALSHI", "False").lower() in ("true", "1", "t", "yes")
             ),
             market_making=MarketMakingSettings(
                 max_spread=float(os.getenv("MARKET_MAKING_MAX_SPREAD", "0.05")),
@@ -84,7 +88,9 @@ class Settings(BaseModel):
             ),
             simulator=SimulatorSettings(
                 slippage=float(os.getenv("SIMULATOR_SLIPPAGE", "0.001")),
-                latency_ms=int(os.getenv("SIMULATOR_LATENCY_MS", "50"))
+                latency_ms=int(os.getenv("SIMULATOR_LATENCY_MS", "50")),
+                use_polymarket=os.getenv("SIMULATOR_USE_POLYMARKET", "True").lower() in ("true", "1", "t", "yes"),
+                use_kalshi=os.getenv("SIMULATOR_USE_KALSHI", "False").lower() in ("true", "1", "t", "yes")
             )
         )
 

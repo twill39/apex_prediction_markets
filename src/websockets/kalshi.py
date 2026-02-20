@@ -20,7 +20,7 @@ class KalshiWebSocket(BaseWebSocketManager):
     """Kalshi WebSocket client"""
     
     # Kalshi WebSocket URL (based on their API documentation)
-    WS_URL = "wss://api.calendar.kalshi.com/trade-api/v2/ws"
+    WS_URL = "wss://api.kalshi.com/trade-api/ws/v2"
     
     def __init__(self):
         """Initialize Kalshi WebSocket client"""

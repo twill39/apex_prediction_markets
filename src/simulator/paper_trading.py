@@ -40,23 +40,28 @@ class PaperTradingSimulator(BaseSimulator):
     async def initialize_websockets(self):
         """Initialize WebSocket connections"""
         try:
-            self.kalshi_ws = KalshiWebSocket()
-            self.polymarket_ws = PolymarketWebSocket()
+            if self.settings.simulator.use_polymarket:
+                try:
+                    self.polymarket_ws = PolymarketWebSocket()
+                    self.polymarket_ws.register_callback(WebSocketEventType.ORDERBOOK_UPDATE, self._on_websocket_event)
+                    self.polymarket_ws.register_callback(WebSocketEventType.TRADE, self._on_websocket_event)
+                    asyncio.create_task(self.polymarket_ws.start())
+                except Exception as e:
+                    self.logger.error(f"Failed to initialize Polymarket WebSocket: {e}", exc_info=True)
             
-            # Register callbacks
-            self.kalshi_ws.register_callback(WebSocketEventType.ORDERBOOK_UPDATE, self._on_websocket_event)
-            self.kalshi_ws.register_callback(WebSocketEventType.TRADE, self._on_websocket_event)
-            self.polymarket_ws.register_callback(WebSocketEventType.ORDERBOOK_UPDATE, self._on_websocket_event)
-            self.polymarket_ws.register_callback(WebSocketEventType.TRADE, self._on_websocket_event)
+            if self.settings.simulator.use_kalshi:
+                try:
+                    self.kalshi_ws = KalshiWebSocket()
+                    self.kalshi_ws.register_callback(WebSocketEventType.ORDERBOOK_UPDATE, self._on_websocket_event)
+                    self.kalshi_ws.register_callback(WebSocketEventType.TRADE, self._on_websocket_event)
+                    asyncio.create_task(self.kalshi_ws.start())
+                except Exception as e:
+                    self.logger.error(f"Failed to initialize Kalshi WebSocket: {e}", exc_info=True)
             
-            # Start WebSocket connections
-            asyncio.create_task(self.kalshi_ws.start())
-            asyncio.create_task(self.polymarket_ws.start())
-            
-            self.logger.info("WebSocket connections initialized")
+            self.logger.info("WebSocket connections initialization sequence completed")
             
         except Exception as e:
-            self.logger.error(f"Failed to initialize WebSockets: {e}", exc_info=True)
+            self.logger.error(f"Failed to initialize WebSockets sequence: {e}", exc_info=True)
             raise
     
     async def _on_websocket_event(self, event: WebSocketEvent):

@@ -16,7 +16,7 @@ class PolymarketWebSocket(BaseWebSocketManager):
     """Polymarket WebSocket client"""
     
     # Polymarket WebSocket URL (based on their API documentation)
-    WS_URL = "wss://clob.polymarket.com/ws"
+    WS_URL = "wss://ws-subscriptions-clob.polymarket.com/ws/market"
     
     def __init__(self):
         """Initialize Polymarket WebSocket client"""
@@ -228,6 +228,18 @@ class PolymarketWebSocket(BaseWebSocketManager):
         side_str = data.get("side", "").lower()
         side = OrderSide.BUY if side_str in ["buy", "b"] else OrderSide.SELL
         
+        # Extract trading addresses
+        metadata = {}
+        if "maker" in data:
+            metadata["maker"] = data["maker"]
+        if "taker" in data:
+            metadata["taker"] = data["taker"]
+        
+        # We consider the taker as the primary trader executing directionally
+        trader_id = data.get("taker") or data.get("maker")
+        if trader_id:
+            metadata["trader_id"] = trader_id
+
         trade = Trade(
             trade_id=data.get("trade_id") or data.get("id", ""),
             market_id=market_id,
@@ -236,7 +248,8 @@ class PolymarketWebSocket(BaseWebSocketManager):
             price=float(data.get("price", 0)),
             size=float(data.get("size", 0)),
             timestamp=datetime.fromisoformat(data.get("timestamp", datetime.utcnow().isoformat())),
-            fees=float(data.get("fees", 0))
+            fees=float(data.get("fees", 0)),
+            metadata=metadata
         )
         
         return WebSocketEvent(
