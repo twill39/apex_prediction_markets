@@ -1,6 +1,4 @@
-# Team Delegation: Four Roles and Role Guides (Quant Club)
-
-This plan defines four roles for the Apex Prediction Markets project with **quant-focused** responsibilities. Each role guide explicitly states which **quantitative skills** you will use and develop, so club members can choose a track that matches their interests (data/engineering, alpha/signal design, market microstructure, or backtesting/ML).
+# Team Delegation: Four Roles and Role Guides 
 
 ## Role breakdown
 
