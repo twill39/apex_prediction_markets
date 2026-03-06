@@ -3,13 +3,19 @@
 import asyncio
 import json
 import logging
+import ssl
 from abc import ABC, abstractmethod
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Dict, Any, Callable, List, TYPE_CHECKING
+from typing import Optional, Dict, Any, Callable, List, TYPE_CHECKING, Union
 from dataclasses import dataclass
 import websockets
 from websockets.exceptions import ConnectionClosed, WebSocketException
+
+try:
+    import certifi
+except ImportError:
+    certifi = None
 
 if TYPE_CHECKING:
     from websockets.client import WebSocketClientProtocol
@@ -112,14 +118,35 @@ class BaseWebSocketManager(ABC):
         """Parse incoming WebSocket message into a WebSocketEvent"""
         pass
     
+    def get_connection_headers(self) -> Optional[Dict[str, str]]:
+        """Optional extra headers to send when opening the WebSocket (e.g. for auth)."""
+        return None
+    
+    def _get_ssl_context(self) -> Optional[ssl.SSLContext]:
+        """Build SSL context using certifi's CA bundle (fixes CERTIFICATE_VERIFY_FAILED on macOS)."""
+        if certifi is None:
+            return None
+        ctx = ssl.create_default_context()
+        ctx.load_verify_locations(certifi.where())
+        return ctx
+    
     async def connect(self):
         """Connect to WebSocket server"""
         try:
             self.logger.info(f"Connecting to {self.url}")
+            extra_headers = self.get_connection_headers()
+            connect_kwargs = {
+                "ping_interval": self.ping_interval,
+                "ping_timeout": self.ping_interval * 2,
+            }
+            if extra_headers:
+                connect_kwargs["additional_headers"] = extra_headers
+            ssl_context = self._get_ssl_context()
+            if ssl_context is not None:
+                connect_kwargs["ssl"] = ssl_context
             self.websocket = await websockets.connect(
                 self.url,
-                ping_interval=self.ping_interval,
-                ping_timeout=self.ping_interval * 2
+                **connect_kwargs
             )
             self.is_connected = True
             self.reconnect_attempts = 0

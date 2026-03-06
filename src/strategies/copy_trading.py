@@ -14,6 +14,7 @@ from src.websockets.base import WebSocketEvent, WebSocketEventType
 from src.websockets.kalshi import KalshiWebSocket
 from src.websockets.polymarket import PolymarketWebSocket
 from src.config import get_settings
+from src.discovery import get_trader_ids_meeting_spec
 from src.utils.logger import get_logger
 from src.strategies.screeners import (
     ConsistentGrinderScreener,
@@ -85,18 +86,23 @@ class CopyTradingStrategy(BaseStrategy):
         self.logger.info(f"Initialized with {len(self.tracked_traders)} tracked traders")
     
     async def _load_top_traders(self):
-        """Load top profitable traders from Polymarket using screeners"""
-        self.logger.info("loading top traders from screeners...")
-        
-        # Gather tracked traders from all screeners
-        for screener in self.screeners:
-            try:
-                screener_traders = await screener.get_tracked_traders()
-                self.tracked_traders.update(screener_traders)
-            except Exception as e:
-                self.logger.error(f"Error fetching from screener {screener.__class__.__name__}: {e}")
-                
-        self.logger.info(f"Loaded {len(self.tracked_traders)} base target traders")
+        """Load traders from Polymarket leaderboard that meet spec (low volume, high PnL)."""
+        ct = self.settings.copy_trading
+        try:
+            ids = get_trader_ids_meeting_spec(
+                max_volume=ct.trader_max_volume,
+                min_pnl=ct.trader_min_pnl,
+                min_pnl_per_vol=ct.trader_min_pnl_per_vol,
+                time_period=ct.trader_discovery_time_period,
+                max_traders=ct.max_traders,
+            )
+            if ids:
+                self.tracked_traders = set(ids)
+                self.logger.info(f"Discovered {len(self.tracked_traders)} traders meeting spec")
+            else:
+                self.logger.info("No traders met discovery criteria; will track traders from trade stream")
+        except Exception as e:
+            self.logger.warning(f"Trader discovery failed: {e}; will track traders from trade stream")
     
     def _calculate_trader_metrics(self, trader_id: str, platform: Platform) -> TraderPerformance:
         """Calculate performance metrics for a trader"""

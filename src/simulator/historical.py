@@ -17,19 +17,22 @@ from src.utils.logger import get_logger
 
 class HistoricalSimulator(BaseSimulator):
     """Simulator that replays historical market data"""
-    
-    def __init__(self, data_path: Optional[str] = None):
-        """Initialize historical simulator"""
+
+    def __init__(self, data_path: Optional[str] = None, markets: Optional[List[str]] = None):
+        """Initialize historical simulator.
+        markets: optional list of market IDs; if set, only events for these markets are replayed.
+        """
         super().__init__(mode=SimulatorMode.HISTORICAL)
         self.settings = get_settings()
         self.logger = get_logger("HistoricalSimulator")
         self.storage = get_storage()
-        
+        self.markets: List[str] = list(markets) if markets else []
+
         # Historical data
         self.data_path = data_path or "./data/historical"
         self.events: List[Dict[str, Any]] = []
         self.current_event_index = 0
-        
+
         # Market state (order books, prices)
         self.market_state: Dict[str, Dict[str, Any]] = {}  # market_id -> state
     
@@ -84,11 +87,14 @@ class HistoricalSimulator(BaseSimulator):
         for strategy in self.strategies:
             await strategy.start()
         
-        # Replay events chronologically
+        # Replay events chronologically (optionally filter by market)
         for i, event in enumerate(self.events):
             if not self.is_running:
                 break
-            
+            if self.markets:
+                mid = event.get("market_id") or event.get("market") or event.get("data", {}).get("market_id")
+                if mid is not None and mid not in self.markets:
+                    continue
             self.current_event_index = i
             await self._process_event(event)
             

@@ -2,13 +2,14 @@
 
 import asyncio
 import json
-import logging
-import hmac
-import hashlib
 import base64
+import time
+from pathlib import Path
 from datetime import datetime
 from typing import Optional, Dict, Any
-from urllib.parse import urlencode
+
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.asymmetric import padding
 
 from .base import BaseWebSocketManager, WebSocketEvent, WebSocketEventType
 from src.config import get_credentials
@@ -17,64 +18,67 @@ from src.utils.logger import get_logger
 
 
 class KalshiWebSocket(BaseWebSocketManager):
-    """Kalshi WebSocket client"""
-    
-    # Kalshi WebSocket URL (based on their API documentation)
-    WS_URL = "wss://api.kalshi.com/trade-api/ws/v2"
+    """Kalshi WebSocket client (authenticates via PEM private key and connection headers)."""
+
+    # Path to sign for WebSocket connection (per Kalshi docs)
+    WS_SIGN_PATH = "/trade-api/ws/v2"
     
     def __init__(self):
         """Initialize Kalshi WebSocket client"""
         credentials = get_credentials()
         if not credentials.kalshi:
-            raise ValueError("Kalshi credentials not configured")
+            raise ValueError("Kalshi credentials not configured (set KALSHI_API_KEY and KALSHI_PRIVATE_KEY_PATH)")
         
-        super().__init__(url=self.WS_URL)
-        self.api_key = credentials.kalshi.api_key
-        self.api_secret = credentials.kalshi.api_secret
+        kalshi = credentials.kalshi
+        super().__init__(url=kalshi.ws_url)
+        self.api_key = kalshi.api_key
+        self.private_key_path = Path(kalshi.private_key_path).expanduser().resolve()
         self.logger = get_logger("KalshiWebSocket")
         
-        # Market subscriptions
+        if not self.private_key_path.is_file():
+            raise ValueError(f"Kalshi private key file not found: {self.private_key_path}")
+        
+        self._private_key = None  # Loaded lazily
         self.market_subscriptions: Dict[str, Dict[str, Any]] = {}
     
-    def _generate_auth_signature(self, timestamp: str) -> str:
-        """Generate authentication signature for Kalshi"""
-        message = f"{self.api_key}{timestamp}"
-        signature = hmac.new(
-            self.api_secret.encode('utf-8'),
-            message.encode('utf-8'),
-            hashlib.sha256
-        ).digest()
-        return base64.b64encode(signature).decode('utf-8')
+    def _load_private_key(self):
+        """Load RSA private key from PEM file."""
+        if self._private_key is None:
+            with open(self.private_key_path, "rb") as f:
+                self._private_key = serialization.load_pem_private_key(
+                    f.read(),
+                    password=None,
+                )
+        return self._private_key
+    
+    def _sign_message(self, message: str) -> str:
+        """Sign message with RSA-PSS (SHA256) and return base64-encoded signature."""
+        private_key = self._load_private_key()
+        signature = private_key.sign(
+            message.encode("utf-8"),
+            padding.PSS(
+                mgf=padding.MGF1(hashes.SHA256()),
+                salt_length=padding.PSS.DIGEST_LENGTH,
+            ),
+            hashes.SHA256(),
+        )
+        return base64.b64encode(signature).decode("utf-8")
+    
+    def get_connection_headers(self) -> Dict[str, str]:
+        """Build Kalshi auth headers for WebSocket connection (timestamp in milliseconds, GET path)."""
+        timestamp_ms = str(int(time.time() * 1000))
+        message = timestamp_ms + "GET" + self.WS_SIGN_PATH
+        signature = self._sign_message(message)
+        return {
+            "KALSHI-ACCESS-KEY": self.api_key,
+            "KALSHI-ACCESS-TIMESTAMP": timestamp_ms,
+            "KALSHI-ACCESS-SIGNATURE": signature,
+        }
     
     async def authenticate(self) -> bool:
-        """Authenticate with Kalshi WebSocket"""
-        try:
-            timestamp = str(int(datetime.utcnow().timestamp()))
-            signature = self._generate_auth_signature(timestamp)
-            
-            auth_message = {
-                "action": "auth",
-                "api_key": self.api_key,
-                "timestamp": timestamp,
-                "signature": signature
-            }
-            
-            await self.send_message(auth_message)
-            
-            # Wait for auth response
-            response = await asyncio.wait_for(self.websocket.recv(), timeout=5.0)
-            response_data = json.loads(response)
-            
-            if response_data.get("status") == "ok":
-                self.logger.info("Kalshi authentication successful")
-                return True
-            else:
-                self.logger.error(f"Kalshi authentication failed: {response_data}")
-                return False
-                
-        except Exception as e:
-            self.logger.error(f"Authentication error: {e}", exc_info=True)
-            return False
+        """Kalshi auth is done via headers on connect; no post-connect auth message."""
+        self.logger.info("Kalshi authentication (via connection headers) successful")
+        return True
     
     async def subscribe(self, channel: str, **kwargs) -> bool:
         """Subscribe to a Kalshi channel"""

@@ -25,6 +25,11 @@ class CopyTradingSettings(BaseModel):
     max_position_size: float = Field(default=1000.0, description="Maximum position size per trade")
     max_traders: int = Field(default=10, description="Maximum number of traders to copy")
     use_kalshi: bool = Field(default=False, description="Enable Kalshi WebSocket")
+    # Trader discovery: low volume + high PnL (edge)
+    trader_max_volume: Optional[float] = Field(default=None, description="Max leaderboard volume to consider (None = no cap)")
+    trader_min_pnl: Optional[float] = Field(default=None, description="Min PnL to consider (None = no floor)")
+    trader_min_pnl_per_vol: Optional[float] = Field(default=None, description="Min PnL/vol ratio (None = no floor)")
+    trader_discovery_time_period: str = Field(default="WEEK", description="Leaderboard period: DAY, WEEK, MONTH, ALL")
 
 
 class MarketMakingSettings(BaseModel):
@@ -32,6 +37,11 @@ class MarketMakingSettings(BaseModel):
     max_spread: float = Field(default=0.05, description="Maximum spread to market make on")
     min_volume: float = Field(default=100.0, description="Minimum daily volume")
     max_position: float = Field(default=5000.0, description="Maximum position size")
+    # Market discovery: high spread + decent liquidity
+    discovery_min_liquidity: float = Field(default=0.0, description="Min liquidity (Polymarket) for discovery")
+    discovery_min_spread_pct: float = Field(default=0.005, description="Min spread as fraction (e.g. 0.01 = 1%)")
+    discovery_min_volume_24h_kalshi: float = Field(default=0.0, description="Min 24h volume (Kalshi) for discovery")
+    discovery_max_markets: int = Field(default=50, description="Max markets to discover per platform")
 
 
 class AltDataSettings(BaseModel):
@@ -73,12 +83,20 @@ class Settings(BaseModel):
             copy_trading=CopyTradingSettings(
                 max_position_size=float(os.getenv("COPY_TRADING_MAX_POSITION_SIZE", "1000")),
                 max_traders=int(os.getenv("COPY_TRADING_MAX_TRADERS", "10")),
-                use_kalshi=os.getenv("COPY_TRADING_USE_KALSHI", "False").lower() in ("true", "1", "t", "yes")
+                use_kalshi=os.getenv("COPY_TRADING_USE_KALSHI", "False").lower() in ("true", "1", "t", "yes"),
+                trader_max_volume=float(os.getenv("COPY_TRADING_TRADER_MAX_VOLUME")) if os.getenv("COPY_TRADING_TRADER_MAX_VOLUME") else None,
+                trader_min_pnl=float(os.getenv("COPY_TRADING_TRADER_MIN_PNL")) if os.getenv("COPY_TRADING_TRADER_MIN_PNL") else None,
+                trader_min_pnl_per_vol=float(os.getenv("COPY_TRADING_TRADER_MIN_PNL_PER_VOL")) if os.getenv("COPY_TRADING_TRADER_MIN_PNL_PER_VOL") else None,
+                trader_discovery_time_period=os.getenv("COPY_TRADING_TRADER_TIME_PERIOD", "WEEK"),
             ),
             market_making=MarketMakingSettings(
                 max_spread=float(os.getenv("MARKET_MAKING_MAX_SPREAD", "0.05")),
                 min_volume=float(os.getenv("MARKET_MAKING_MIN_VOLUME", "100")),
-                max_position=float(os.getenv("MARKET_MAKING_MAX_POSITION", "5000"))
+                max_position=float(os.getenv("MARKET_MAKING_MAX_POSITION", "5000")),
+                discovery_min_liquidity=float(os.getenv("MARKET_MAKING_DISCOVERY_MIN_LIQUIDITY", "0")),
+                discovery_min_spread_pct=float(os.getenv("MARKET_MAKING_DISCOVERY_MIN_SPREAD_PCT", "0.005")),
+                discovery_min_volume_24h_kalshi=float(os.getenv("MARKET_MAKING_DISCOVERY_MIN_VOLUME_24H_KALSHI", "0")),
+                discovery_max_markets=int(os.getenv("MARKET_MAKING_DISCOVERY_MAX_MARKETS", "50")),
             ),
             alt_data=AltDataSettings(
                 confidence_threshold=float(os.getenv("ALT_DATA_CONFIDENCE_THRESHOLD", "0.7")),

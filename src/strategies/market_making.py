@@ -13,7 +13,8 @@ from src.data.storage import get_storage
 from src.websockets.base import WebSocketEvent, WebSocketEventType
 from src.websockets.kalshi import KalshiWebSocket
 from src.websockets.polymarket import PolymarketWebSocket
-from src.config import get_settings
+from src.config import get_credentials, get_settings
+from src.discovery import discover_markets_for_making
 from src.utils.logger import get_logger
 
 
@@ -38,7 +39,10 @@ class MarketMakingStrategy(BaseStrategy):
         
         # Fair value estimates
         self.fair_values: Dict[str, float] = {}  # market_id -> fair_value
-        
+
+        # Discovered markets (from discovery API)
+        self.discovered_market_ids: List[str] = []
+
         # WebSocket clients
         self.kalshi_ws: Optional[KalshiWebSocket] = None
         self.polymarket_ws: Optional[PolymarketWebSocket] = None
@@ -69,17 +73,35 @@ class MarketMakingStrategy(BaseStrategy):
         self.logger.info(f"Initialized with {len(self.active_markets)} active markets")
     
     async def _identify_markets(self):
-        """Identify markets suitable for market making"""
-        # Criteria for market making:
-        # 1. Low volume (niche markets)
-        # 2. High spread (opportunity)
-        # 3. Clear fair value (binary outcomes)
-        # 4. Low volatility
-        
-        # This would typically query the API for markets
-        # For now, we'll process markets as we see them in order book updates
-        
-        self.logger.info("Market identification will happen dynamically from order book updates")
+        """Discover markets with high spread and decent liquidity for market making."""
+        mm = self.settings.market_making
+        kalshi_base = DEFAULT_KALSHI_BASE
+        try:
+            creds = get_credentials()
+            if creds and creds.kalshi:
+                kalshi_base = creds.kalshi.base_url
+        except Exception:
+            pass
+        try:
+            discovered = discover_markets_for_making(
+                min_liquidity_poly=mm.discovery_min_liquidity,
+                min_spread_pct=mm.discovery_min_spread_pct,
+                min_volume_24h_kalshi=mm.discovery_min_volume_24h_kalshi,
+                max_poly=mm.discovery_max_markets,
+                max_kalshi=mm.discovery_max_markets,
+                kalshi_base_url=kalshi_base,
+            )
+            self.discovered_market_ids = [m["market_id"] for m in discovered]
+            if self.discovered_market_ids:
+                self.logger.info(f"Discovered {len(self.discovered_market_ids)} markets for market making")
+            else:
+                self.logger.info("No markets met discovery criteria; will use markets from order book stream")
+        except Exception as e:
+            self.logger.warning(f"Market discovery failed: {e}; will use order book stream")
+
+    def get_discovered_market_ids(self) -> List[str]:
+        """Return market IDs discovered for market making (for simulator subscription)."""
+        return list(self.discovered_market_ids)
     
     def _calculate_fair_value(self, market_id: str, orderbook: OrderBook) -> Optional[float]:
         """Calculate fair value for a market"""

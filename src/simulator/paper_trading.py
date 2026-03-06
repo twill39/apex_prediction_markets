@@ -19,23 +19,31 @@ from src.utils.logger import get_logger
 
 class PaperTradingSimulator(BaseSimulator):
     """Simulator that trades on live data with simulated execution"""
-    
-    def __init__(self):
-        """Initialize paper trading simulator"""
+
+    def __init__(self, markets: Optional[List[str]] = None, duration_minutes: Optional[float] = None):
+        """Initialize paper trading simulator.
+        markets: optional list of market/asset IDs to subscribe to (Kalshi + Polymarket).
+        duration_minutes: if set, run for this many minutes then stop and report.
+        """
         super().__init__(mode=SimulatorMode.PAPER)
         self.settings = get_settings()
         self.logger = get_logger("PaperTradingSimulator")
         self.storage = get_storage()
-        
+        self.markets: List[str] = list(markets) if markets else []
+        self.duration_minutes: Optional[float] = duration_minutes
+
         # WebSocket clients
         self.kalshi_ws: Optional[KalshiWebSocket] = None
         self.polymarket_ws: Optional[PolymarketWebSocket] = None
-        
+
         # Market state
         self.market_state: Dict[str, Dict[str, Any]] = {}  # market_id -> state
-        
+
         # Pending orders
         self.pending_orders: Dict[str, Order] = {}
+
+        # Set to True if run() exited early due to WebSocket connection failure
+        self.websocket_connection_failed: bool = False
     
     async def initialize_websockets(self):
         """Initialize WebSocket connections"""
@@ -318,27 +326,91 @@ class PaperTradingSimulator(BaseSimulator):
         # Initialize WebSockets
         await self.initialize_websockets()
         
-        # Wait for connections
-        await asyncio.sleep(2)
+        # Wait for connections to establish (or fail)
+        await asyncio.sleep(3)
         
-        # Start strategies
+        # Require at least one WebSocket to be connected
+        kalshi_ok = self.kalshi_ws is not None and self.kalshi_ws.is_connected
+        poly_ok = self.polymarket_ws is not None and self.polymarket_ws.is_connected
+        if not kalshi_ok and not poly_ok:
+            self.websocket_connection_failed = True
+            msg = "Could not load simulator because of bad websocket connection."
+            self.logger.error(msg)
+            print(f"\n{msg}\nCheck credentials, network, and logs above for details.\n")
+            self.is_running = False
+            if self.kalshi_ws:
+                await self.kalshi_ws.stop()
+            if self.polymarket_ws:
+                await self.polymarket_ws.stop()
+            self.end_time = datetime.utcnow()
+            self.metrics = self._calculate_metrics()
+            return
+
+        # Start strategies first so they can run discovery (e.g. market_making discovers markets)
         for strategy in self.strategies:
             await strategy.start()
-        
+
+        # Build subscription list: CLI/file markets + any strategy-discovered markets
+        all_market_ids = list(self.markets)
+        for strategy in self.strategies:
+            if hasattr(strategy, "get_discovered_market_ids") and callable(getattr(strategy, "get_discovered_market_ids")):
+                discovered = strategy.get_discovered_market_ids()
+                for mid in discovered:
+                    if mid and mid not in all_market_ids:
+                        all_market_ids.append(mid)
+        if all_market_ids and all_market_ids != self.markets:
+            self.logger.info(f"Subscribing to {len(all_market_ids)} market(s) (config + discovered)")
+        elif all_market_ids:
+            self.logger.info(f"Subscribing to {len(all_market_ids)} market(s): {all_market_ids[:5]}{'...' if len(all_market_ids) > 5 else ''}")
+        if all_market_ids:
+            if kalshi_ok and self.kalshi_ws:
+                for market_id in all_market_ids:
+                    try:
+                        await self.kalshi_ws.subscribe_market(market_id)
+                    except Exception as e:
+                        self.logger.warning(f"Kalshi subscribe {market_id}: {e}")
+            if poly_ok and self.polymarket_ws:
+                try:
+                    await self.polymarket_ws.subscribe_assets(all_market_ids)
+                except Exception as e:
+                    self.logger.warning(f"Polymarket subscribe assets: {e}")
+        else:
+            self.logger.info("No markets to subscribe to; use --markets/--markets-file or run market_making for discovery.")
+
+        # Optional: stop after duration_minutes
+        duration_task: Optional[asyncio.Task] = None
+        if self.duration_minutes is not None and self.duration_minutes > 0:
+            duration_seconds = self.duration_minutes * 60.0
+            self.logger.info(f"Paper run will stop after {self.duration_minutes} minute(s)")
+
+            async def stop_after_duration():
+                await asyncio.sleep(duration_seconds)
+                if self.is_running:
+                    self.logger.info("Duration reached; stopping paper run")
+                    self.is_running = False
+
+            duration_task = asyncio.create_task(stop_after_duration())
+
         # Main loop
         try:
             while self.is_running:
                 # Process strategy signals periodically
                 await self._process_strategy_signals()
-                
+
                 # Update metrics periodically
                 await asyncio.sleep(1)
-                
+
         except KeyboardInterrupt:
             self.logger.info("Stopped by user")
         finally:
+            if duration_task is not None and not duration_task.done():
+                duration_task.cancel()
+                try:
+                    await duration_task
+                except asyncio.CancelledError:
+                    pass
             self.end_time = datetime.utcnow()
-            
+
             # Stop strategies
             for strategy in self.strategies:
                 await strategy.stop()

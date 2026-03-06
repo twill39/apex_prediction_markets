@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 from .base import BaseWebSocketManager, WebSocketEvent, WebSocketEventType
 from src.config import get_credentials
@@ -13,95 +13,90 @@ from src.utils.logger import get_logger
 
 
 class PolymarketWebSocket(BaseWebSocketManager):
-    """Polymarket WebSocket client"""
-    
-    # Polymarket WebSocket URL (based on their API documentation)
+    """Polymarket WebSocket client.
+
+    Per Polymarket docs:
+    - Market channel (/ws/market): no authentication; public orderbook/trades.
+    - User channel (/ws/user): requires auth object { apiKey, secret, passphrase } in subscribe.
+    """
+
+    # Market channel: public data, no auth. User channel would be /ws/user.
     WS_URL = "wss://ws-subscriptions-clob.polymarket.com/ws/market"
-    
+
     def __init__(self):
         """Initialize Polymarket WebSocket client"""
         credentials = get_credentials()
         if not credentials.polymarket:
             raise ValueError("Polymarket credentials not configured")
-        
+
         super().__init__(url=self.WS_URL)
-        self.api_key = credentials.polymarket.api_key
+        self.api_key = getattr(credentials.polymarket, "api_key", None)
+        self.secret = getattr(credentials.polymarket, "secret", None)
+        self.passphrase = getattr(credentials.polymarket, "passphrase", None)
         self.logger = get_logger("PolymarketWebSocket")
-        
+
         # Market subscriptions
         self.market_subscriptions: Dict[str, Dict[str, Any]] = {}
-    
+
+    def _is_market_channel(self) -> bool:
+        """True if connected to the public market channel (no auth)."""
+        return "/ws/market" in self.url
+
     async def authenticate(self) -> bool:
-        """Authenticate with Polymarket WebSocket"""
-        # Polymarket may not require authentication for public market data
-        # If API key is provided, use it
-        if self.api_key:
-            try:
-                auth_message = {
-                    "type": "auth",
-                    "api_key": self.api_key
-                }
-                
-                await self.send_message(auth_message)
-                
-                # Wait for auth response
-                response = await asyncio.wait_for(self.websocket.recv(), timeout=5.0)
-                response_data = json.loads(response)
-                
-                if response_data.get("status") == "ok" or response_data.get("type") == "auth_success":
-                    self.logger.info("Polymarket authentication successful")
-                    return True
-                else:
-                    self.logger.warning(f"Polymarket authentication response: {response_data}")
-                    # Continue anyway as public data may not require auth
-                    return True
-                    
-            except Exception as e:
-                self.logger.warning(f"Authentication attempt failed, continuing without auth: {e}")
-                # Polymarket public data may not require authentication
-                return True
-        else:
-            # No API key, assume public access
-            self.logger.info("No API key provided, using public Polymarket data")
+        """Authenticate per Polymarket model.
+        Market channel: no auth (server does not expect or support it).
+        User channel: auth is sent inside the subscribe message, not here.
+        """
+        if self._is_market_channel():
+            # Market channel has no authentication (per Polymarket docs).
+            self.logger.debug("Polymarket market channel: no authentication required")
             return True
+        # User channel: auth is done via auth object in subscribe(), not a separate message.
+        self.logger.debug("Polymarket user channel: auth is sent with subscription")
+        return True
     
     async def subscribe(self, channel: str, **kwargs) -> bool:
-        """Subscribe to a Polymarket channel"""
+        """Subscribe to a Polymarket channel.
+        User channel requires auth object: { apiKey, secret, passphrase } in the message.
+        """
         try:
-            # Polymarket subscription format
-            subscribe_message = {
-                "type": "subscribe",
-                "channel": channel,
-                **kwargs
-            }
-            
+            subscribe_message = {"type": "subscribe", "channel": channel, **kwargs}
+            if not self._is_market_channel() and self.api_key and self.secret and self.passphrase:
+                subscribe_message["auth"] = {
+                    "apiKey": self.api_key,
+                    "secret": self.secret,
+                    "passphrase": self.passphrase,
+                }
             await self.send_message(subscribe_message)
             self.subscriptions.add(channel)
             self.logger.info(f"Subscribed to channel: {channel}")
             return True
-            
         except Exception as e:
             self.logger.error(f"Failed to subscribe to {channel}: {e}", exc_info=True)
             return False
     
+    async def subscribe_assets(self, assets_ids: List[str], custom_feature_enabled: bool = True) -> bool:
+        """Subscribe to market channel for the given asset IDs (Polymarket market-channel format)."""
+        if not assets_ids:
+            return True
+        try:
+            msg = {
+                "assets_ids": assets_ids,
+                "type": "market",
+                "custom_feature_enabled": custom_feature_enabled,
+            }
+            await self.send_message(msg)
+            for aid in assets_ids:
+                self.market_subscriptions[aid] = {"orderbook": True, "trades": True}
+            self.logger.info(f"Subscribed to {len(assets_ids)} Polymarket assets")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to subscribe to Polymarket assets: {e}", exc_info=True)
+            return False
+
     async def subscribe_market(self, market_id: str, subscribe_orderbook: bool = True, subscribe_trades: bool = True):
-        """Subscribe to market data for a specific market"""
-        subscriptions = []
-        
-        if subscribe_orderbook:
-            await self.subscribe(f"orderbook:{market_id}")
-            subscriptions.append(f"orderbook:{market_id}")
-        
-        if subscribe_trades:
-            await self.subscribe(f"trades:{market_id}")
-            subscriptions.append(f"trades:{market_id}")
-        
-        self.market_subscriptions[market_id] = {
-            "orderbook": subscribe_orderbook,
-            "trades": subscribe_trades
-        }
-        
-        return subscriptions
+        """Subscribe to a single market (convenience; for multiple use subscribe_assets)."""
+        return await self.subscribe_assets([market_id])
     
     async def unsubscribe(self, channel: str) -> bool:
         """Unsubscribe from a channel"""

@@ -191,6 +191,92 @@ python scripts/run_strategy.py --strategy alt_data --mode historical --data-path
 
 ---
 
+## Specifying Markets for the Simulator
+
+You can restrict paper (and historical) runs to specific markets so strategies only receive data for those markets.
+
+**From the CLI:**
+
+```bash
+# Comma-separated list
+python scripts/run_strategy.py --strategy copy_trading --mode paper --markets "id1,id2,id3"
+
+# From a file (default: simulator/test_markets.txt)
+python scripts/run_strategy.py --strategy market_making --mode paper --markets-file simulator/test_markets.txt
+
+# Custom file path
+python scripts/run_strategy.py --strategy alt_data --mode paper --markets-file ./my_markets.txt
+
+# Run paper for a fixed duration (minutes), then stop and print report
+python scripts/run_strategy.py --strategy copy_trading --mode paper --duration 5
+```
+
+**Duration (paper mode):** Use `--duration MINUTES` to run the paper simulator for that many minutes, then stop and print the performance report. Omit to run until you press Ctrl+C.
+
+**Market list file (`simulator/test_markets.txt`):**
+
+- One market or asset ID per line (or one Polymarket slug per line).
+- Lines starting with `#` are ignored; blank lines are skipped.
+- **Polymarket:** You can use either CLOB asset IDs (long numeric strings) or **event slugs** (e.g. `fed-decision-in-october`). Slugs are resolved to asset IDs automatically via the Gamma API when you run the simulator.
+- **Kalshi:** Use market tickers (e.g. `KXBTC-24`, `KXCLOSEHORMUZ-27JAN-26MAY`); these are left as-is.
+- The same list is used for both platforms; IDs valid on only one platform will only receive data from that platform.
+
+**Resolving slugs manually:** To print asset IDs for slugs (e.g. to paste elsewhere), run:
+
+```bash
+# Resolve one or more slugs
+python scripts/resolve_polymarket_slugs.py fed-decision-in-october
+
+# Resolve all slug-like lines from a file (e.g. test_markets.txt)
+python scripts/resolve_polymarket_slugs.py --file simulator/test_markets.txt
+
+# See which lines are treated as slugs vs IDs (no API call)
+python scripts/resolve_polymarket_slugs.py --file simulator/test_markets.txt --no-resolve
+```
+
+If you omit both `--markets` and `--markets-file`, the default file `simulator/test_markets.txt` is used if it exists; otherwise no markets are subscribed and you may receive no trade/orderbook data until you add a list.
+
+---
+
+## Discovery Scripts (Traders & Markets)
+
+The strategies can discover traders and markets via API; you can also run the same logic from the CLI.
+
+**Trader discovery (copy trading):** Find Polymarket traders with low volume and high PnL (potential edge).
+
+```bash
+# List traders meeting spec (default: WEEK leaderboard)
+python scripts/discover_traders.py
+
+# Stricter: max volume 50k, min PnL 1k, min PnL/vol 0.02
+python scripts/discover_traders.py --max-volume 50000 --min-pnl 1000 --min-pnl-per-vol 0.02
+
+# Output only proxyWallet addresses (for config/scripts)
+python scripts/discover_traders.py --ids-only --limit 20
+```
+
+Copy trading uses these settings from `.env`: `COPY_TRADING_TRADER_MAX_VOLUME`, `COPY_TRADING_TRADER_MIN_PNL`, `COPY_TRADING_TRADER_MIN_PNL_PER_VOL`, `COPY_TRADING_TRADER_TIME_PERIOD`. If unset, the strategy uses leaderboard data without filtering by volume/PnL.
+
+**Market discovery (market making):** Find Polymarket and Kalshi markets with high spread and decent liquidity.
+
+```bash
+# Discover on both platforms (default)
+python scripts/discover_markets.py both
+
+# Polymarket only
+python scripts/discover_markets.py poly --min-spread-pct 0.01 --min-liquidity 1000
+
+# Kalshi only
+python scripts/discover_markets.py kalshi --min-spread-pct 0.005
+
+# Output only market IDs (for test_markets.txt or --markets)
+python scripts/discover_markets.py both --ids-only
+```
+
+Market making uses: `MARKET_MAKING_DISCOVERY_MIN_LIQUIDITY`, `MARKET_MAKING_DISCOVERY_MIN_SPREAD_PCT`, `MARKET_MAKING_DISCOVERY_MIN_VOLUME_24H_KALSHI`, `MARKET_MAKING_DISCOVERY_MAX_MARKETS`. When you run the market_making strategy in paper mode, it discovers markets from the APIs and subscribes to them (in addition to any `--markets` / file list).
+
+---
+
 ## Collecting Historical Data
 
 Before running strategies in historical mode, you need to collect historical market data:

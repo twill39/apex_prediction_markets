@@ -1,0 +1,13 @@
+# List of market/asset IDs to subscribe to for paper trading.
+# One ID per line. Lines starting with # are ignored.
+# Use Polymarket token IDs (long numbers) or Kalshi market tickers (e.g. KXBTC-24).
+# The same list is sent to both platforms; IDs valid on only one platform will
+# receive data from that platform only.
+#
+# Example Polymarket asset IDs (replace with real IDs from Polymarket):
+# 21742633143463906290569050155826241533067272736897614950488156847949938836455
+# 48331043336612883890938759509493159234755048973500640148014422747788308965732
+#
+# Example Kalshi market tickers:
+# KXBTC-24
+KXCLOSEHORMUZ-27JAN-26MAY
