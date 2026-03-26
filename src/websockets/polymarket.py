@@ -119,25 +119,35 @@ class PolymarketWebSocket(BaseWebSocketManager):
         """Parse Polymarket WebSocket message"""
         try:
             data = json.loads(message)
+            # Some Polymarket WS endpoints send batched payloads as a list of messages.
+            # Since BaseWebSocketManager expects `parse_message()` to return a single event,
+            # we emit parsed events here and return None to avoid breaking the receive loop.
+            if isinstance(data, list):
+                for item in data:
+                    if not isinstance(item, dict):
+                        continue
+                    try:
+                        ev = self.parse_message(json.dumps(item))
+                        if ev:
+                            self._emit_event(ev)
+                    except Exception:
+                        continue
+                return None
             
-            # Handle different message types
-            msg_type = data.get("type", "")
+            # Polymarket documented schema uses `event_type`.
+            event_type = data.get("event_type") or data.get("type") or ""
             
-            # Order book update
-            if msg_type == "orderbook" or "orderbook" in data.get("channel", ""):
+            # Order book snapshot
+            if event_type == "book":
                 return self._parse_orderbook(data)
             
-            # Trade update
-            elif msg_type == "trade" or "trades" in data.get("channel", ""):
+            # Trade execution
+            elif event_type == "last_trade_price":
                 return self._parse_trade(data)
             
             # Market update
-            elif msg_type == "market" or msg_type == "market_update":
+            elif event_type in ["new_market", "market_resolved"]:
                 return self._parse_market_update(data)
-            
-            # L2 order book snapshot
-            elif msg_type == "l2_orderbook":
-                return self._parse_orderbook(data)
             
             # Status/error messages
             elif msg_type in ["status", "error", "auth_success"]:
@@ -161,7 +171,7 @@ class PolymarketWebSocket(BaseWebSocketManager):
     
     def _parse_orderbook(self, data: Dict[str, Any]) -> WebSocketEvent:
         """Parse order book update"""
-        market_id = data.get("market_id") or data.get("market") or data.get("channel", "").split(":")[-1]
+        market_id = data.get("asset_id") or data.get("market_id") or data.get("market") or data.get("channel", "").split(":")[-1]
         
         # Extract bid/ask levels
         bids = []
@@ -200,10 +210,22 @@ class PolymarketWebSocket(BaseWebSocketManager):
                         orders=ask.get("orders", 1)
                     ))
         
+        ts = data.get("timestamp")
+        # Polymarket timestamps are typically ms since epoch.
+        try:
+            if isinstance(ts, str) and ts.isdigit():
+                ts_dt = datetime.fromtimestamp(int(ts) / 1000.0)
+            elif isinstance(ts, (int, float)):
+                ts_dt = datetime.fromtimestamp(float(ts) / 1000.0)
+            else:
+                ts_dt = datetime.utcnow()
+        except Exception:
+            ts_dt = datetime.utcnow()
+
         orderbook = OrderBook(
             market_id=market_id,
             platform=Platform.POLYMARKET,
-            timestamp=datetime.utcnow(),
+            timestamp=ts_dt,
             bids=bids,
             asks=asks
         )
@@ -217,11 +239,14 @@ class PolymarketWebSocket(BaseWebSocketManager):
     
     def _parse_trade(self, data: Dict[str, Any]) -> WebSocketEvent:
         """Parse trade update"""
-        market_id = data.get("market_id") or data.get("market") or data.get("channel", "").split(":")[-1]
+        market_id = data.get("asset_id") or data.get("market_id") or data.get("market") or data.get("channel", "").split(":")[-1]
         
         # Polymarket trade format
-        side_str = data.get("side", "").lower()
-        side = OrderSide.BUY if side_str in ["buy", "b"] else OrderSide.SELL
+        side_str = str(data.get("side", "")).strip().lower()
+        if side_str in ["buy", "b", "yes"]:
+            side = OrderSide.BUY
+        else:
+            side = OrderSide.SELL
         
         # Extract trading addresses
         metadata = {}
@@ -230,10 +255,21 @@ class PolymarketWebSocket(BaseWebSocketManager):
         if "taker" in data:
             metadata["taker"] = data["taker"]
         
-        # We consider the taker as the primary trader executing directionally
+        # Polymarket public `last_trade_price` payload usually doesn't include maker/taker IDs.
         trader_id = data.get("taker") or data.get("maker")
         if trader_id:
             metadata["trader_id"] = trader_id
+
+        ts = data.get("timestamp")
+        try:
+            if isinstance(ts, str) and ts.isdigit():
+                ts_dt = datetime.fromtimestamp(int(ts) / 1000.0)
+            elif isinstance(ts, (int, float)):
+                ts_dt = datetime.fromtimestamp(float(ts) / 1000.0)
+            else:
+                ts_dt = datetime.utcnow()
+        except Exception:
+            ts_dt = datetime.utcnow()
 
         trade = Trade(
             trade_id=data.get("trade_id") or data.get("id", ""),
@@ -242,8 +278,8 @@ class PolymarketWebSocket(BaseWebSocketManager):
             side=side,
             price=float(data.get("price", 0)),
             size=float(data.get("size", 0)),
-            timestamp=datetime.fromisoformat(data.get("timestamp", datetime.utcnow().isoformat())),
-            fees=float(data.get("fees", 0)),
+            timestamp=ts_dt,
+            fees=float(data.get("fees", 0)) if data.get("fees") is not None else 0.0,
             metadata=metadata
         )
         
@@ -256,9 +292,29 @@ class PolymarketWebSocket(BaseWebSocketManager):
     
     def _parse_market_update(self, data: Dict[str, Any]) -> WebSocketEvent:
         """Parse market update"""
+        # Normalize to the keys our strategies expect in `event.data`:
+        # - `market_id`: asset id to correlate with orderbook/trade streams
+        # - `title`: text to extract keywords from
+        assets_ids = data.get("assets_ids") or []
+        market_id = data.get("asset_id") or data.get("market_id")
+        if not market_id and isinstance(assets_ids, list) and assets_ids:
+            market_id = assets_ids[0]
+        if not market_id:
+            market_id = data.get("winning_asset_id") or data.get("market") or data.get("id")
+
+        title = (
+            (data.get("event_message") or {}).get("title")
+            or data.get("question")
+            or data.get("slug")
+            or ""
+        )
+        normalized = dict(data)
+        normalized["market_id"] = market_id
+        normalized["title"] = title
+
         return WebSocketEvent(
             event_type=WebSocketEventType.MARKET_UPDATE,
-            data=data,
+            data=normalized,
             timestamp=datetime.utcnow(),
-            market_id=data.get("market_id") or data.get("market")
+            market_id=market_id
         )

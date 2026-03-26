@@ -71,3 +71,6 @@ htmlcov/
 *.pem
 *.key
 private_key.pem
+
+roles.md
+report.md

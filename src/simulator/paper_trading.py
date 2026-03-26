@@ -53,6 +53,7 @@ class PaperTradingSimulator(BaseSimulator):
                     self.polymarket_ws = PolymarketWebSocket()
                     self.polymarket_ws.register_callback(WebSocketEventType.ORDERBOOK_UPDATE, self._on_websocket_event)
                     self.polymarket_ws.register_callback(WebSocketEventType.TRADE, self._on_websocket_event)
+                    self.polymarket_ws.register_callback(WebSocketEventType.MARKET_UPDATE, self._on_websocket_event)
                     asyncio.create_task(self.polymarket_ws.start())
                 except Exception as e:
                     self.logger.error(f"Failed to initialize Polymarket WebSocket: {e}", exc_info=True)
@@ -62,6 +63,7 @@ class PaperTradingSimulator(BaseSimulator):
                     self.kalshi_ws = KalshiWebSocket()
                     self.kalshi_ws.register_callback(WebSocketEventType.ORDERBOOK_UPDATE, self._on_websocket_event)
                     self.kalshi_ws.register_callback(WebSocketEventType.TRADE, self._on_websocket_event)
+                    self.kalshi_ws.register_callback(WebSocketEventType.MARKET_UPDATE, self._on_websocket_event)
                     asyncio.create_task(self.kalshi_ws.start())
                 except Exception as e:
                     self.logger.error(f"Failed to initialize Kalshi WebSocket: {e}", exc_info=True)
@@ -91,6 +93,12 @@ class PaperTradingSimulator(BaseSimulator):
             if trade_data:
                 trade = Trade(**trade_data)
                 await self._process_trade(trade)
+        elif event.event_type == WebSocketEventType.MARKET_UPDATE:
+            # Strategies (notably `alt_data`) rely on market updates via `on_market_event`.
+            for strategy in self.strategies:
+                await strategy.on_market_event(event)
+            # Market updates can change fair-value inputs; allow strategies to react.
+            await self._process_strategy_signals()
     
     async def _process_orderbook_update(self, orderbook):
         """Process order book update"""

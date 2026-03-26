@@ -131,6 +131,7 @@ def calculate_metrics(
 
 def generate_report(metrics: PerformanceMetrics) -> str:
     """Generate a text report from metrics"""
+    sharpe_str = f"{metrics.sharpe_ratio:.2f}" if metrics.sharpe_ratio is not None else "N/A"
     report = f"""
 Performance Report
 =================
@@ -148,7 +149,7 @@ Performance
 -----------
 Total P&L: ${metrics.total_pnl:,.2f}
 Total Return: {metrics.total_return:.2f}%
-Sharpe Ratio: {metrics.sharpe_ratio:.2f if metrics.sharpe_ratio else 'N/A'}
+Sharpe Ratio: {sharpe_str}
 Max Drawdown: ${metrics.max_drawdown:,.2f} ({metrics.max_drawdown_pct:.2f}%)
 
 Trade Analysis

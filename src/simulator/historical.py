@@ -13,6 +13,7 @@ from src.data.models import Order, Trade, Position, OrderSide, OrderType, OrderS
 from src.data.storage import get_storage
 from src.config import get_settings
 from src.utils.logger import get_logger
+from src.websockets.base import WebSocketEvent, WebSocketEventType
 
 
 class HistoricalSimulator(BaseSimulator):
@@ -134,17 +135,24 @@ class HistoricalSimulator(BaseSimulator):
         if market_id not in self.market_state:
             self.market_state[market_id] = {}
         
-        # Create order book from event
-        bids = [OrderBookLevel(price=b[0], size=b[1]) for b in event.get("bids", [])]
-        asks = [OrderBookLevel(price=a[0], size=a[1]) for a in event.get("asks", [])]
-        
-        orderbook = OrderBook(
-            market_id=market_id,
-            platform=Platform(event.get("platform", "kalshi")),
-            timestamp=self._get_event_timestamp(event),
-            bids=bids,
-            asks=asks
-        )
+        payload = event.get("data") or {}
+        # Newer format (from `scripts/collect_historical.py`):
+        #   event["data"]["orderbook"] = OrderBook.model_dump()
+        orderbook_data = payload.get("orderbook") or event.get("orderbook")
+        if orderbook_data:
+            # Let the model validate/parse where possible.
+            orderbook = OrderBook(**orderbook_data)
+        else:
+            # Back-compat: older format with top-level `bids`/`asks` as [[price,size], ...]
+            bids = [OrderBookLevel(price=b[0], size=b[1]) for b in event.get("bids", [])]
+            asks = [OrderBookLevel(price=a[0], size=a[1]) for a in event.get("asks", [])]
+            orderbook = OrderBook(
+                market_id=market_id,
+                platform=Platform(event.get("platform", "kalshi")),
+                timestamp=self._get_event_timestamp(event),
+                bids=bids,
+                asks=asks,
+            )
         
         # Notify strategies
         for strategy in self.strategies:
@@ -156,16 +164,22 @@ class HistoricalSimulator(BaseSimulator):
     async def _process_trade(self, event: Dict[str, Any]):
         """Process trade event"""
         from src.data.models import Trade
-        
-        trade = Trade(
-            trade_id=event.get("trade_id", f"hist_{self.current_event_index}"),
-            market_id=event.get("market_id"),
-            platform=Platform(event.get("platform", "kalshi")),
-            side=OrderSide(event.get("side", "buy")),
-            price=float(event.get("price", 0)),
-            size=float(event.get("size", 0)),
-            timestamp=self._get_event_timestamp(event)
-        )
+
+        payload = event.get("data") or {}
+        trade_data = payload.get("trade") or event.get("trade")
+        if trade_data:
+            trade = Trade(**trade_data)
+        else:
+            # Back-compat: older format with flat keys.
+            trade = Trade(
+                trade_id=event.get("trade_id", f"hist_{self.current_event_index}"),
+                market_id=event.get("market_id"),
+                platform=Platform(event.get("platform", "kalshi")),
+                side=OrderSide(event.get("side", "buy")),
+                price=float(event.get("price", 0)),
+                size=float(event.get("size", 0)),
+                timestamp=self._get_event_timestamp(event),
+            )
         
         # Notify strategies
         for strategy in self.strategies:
@@ -177,11 +191,25 @@ class HistoricalSimulator(BaseSimulator):
     async def _process_market_update(self, event: Dict[str, Any]):
         """Process market update event"""
         # Update market state
-        market_id = event.get("market_id")
+        market_id = event.get("market_id") or (event.get("data") or {}).get("market_id")
         if market_id:
             if market_id not in self.market_state:
                 self.market_state[market_id] = {}
             self.market_state[market_id].update(event.get("data", {}))
+
+        # Notify strategies (alt_data relies on MARKET_UPDATE via on_market_event)
+        payload = event.get("data") or {}
+        ws_event = WebSocketEvent(
+            event_type=WebSocketEventType.MARKET_UPDATE,
+            data=payload,
+            timestamp=self._get_event_timestamp(event),
+            market_id=market_id,
+        )
+        for strategy in self.strategies:
+            await strategy.on_market_event(ws_event)
+
+        # Generate and process signals
+        await self._process_strategy_signals()
     
     async def _process_strategy_signals(self):
         """Process signals from strategies"""

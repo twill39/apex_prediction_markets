@@ -15,6 +15,7 @@ from src.websockets.kalshi import KalshiWebSocket
 from src.websockets.polymarket import PolymarketWebSocket
 from src.config import get_credentials, get_settings
 from src.discovery import discover_markets_for_making
+from src.discovery.market_discovery import DEFAULT_KALSHI_BASE
 from src.utils.logger import get_logger
 
 

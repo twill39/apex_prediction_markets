@@ -34,14 +34,28 @@ class HistoricalDataCollector:
         ws = KalshiWebSocket()
         
         # Register callback
+        def _to_jsonable(obj):
+            # Convert datetimes inside nested websocket payloads.
+            if isinstance(obj, datetime):
+                return obj.isoformat()
+            if isinstance(obj, dict):
+                return {k: _to_jsonable(v) for k, v in obj.items()}
+            if isinstance(obj, list):
+                return [_to_jsonable(x) for x in obj]
+            return obj
+
         def on_event(event: WebSocketEvent):
-            if event.event_type in [WebSocketEventType.ORDERBOOK_UPDATE, WebSocketEventType.TRADE]:
+            if event.event_type in [
+                WebSocketEventType.ORDERBOOK_UPDATE,
+                WebSocketEventType.TRADE,
+                WebSocketEventType.MARKET_UPDATE,
+            ]:
                 self.events.append({
                     "type": event.event_type.value,
                     "market_id": event.market_id,
                     "platform": "kalshi",
                     "timestamp": event.timestamp.isoformat(),
-                    "data": event.data
+                    "data": _to_jsonable(event.data),
                 })
         
         ws.register_callback(WebSocketEventType.ORDERBOOK_UPDATE, on_event)
@@ -70,14 +84,27 @@ class HistoricalDataCollector:
         ws = PolymarketWebSocket()
         
         # Register callback
+        def _to_jsonable(obj):
+            if isinstance(obj, datetime):
+                return obj.isoformat()
+            if isinstance(obj, dict):
+                return {k: _to_jsonable(v) for k, v in obj.items()}
+            if isinstance(obj, list):
+                return [_to_jsonable(x) for x in obj]
+            return obj
+
         def on_event(event: WebSocketEvent):
-            if event.event_type in [WebSocketEventType.ORDERBOOK_UPDATE, WebSocketEventType.TRADE]:
+            if event.event_type in [
+                WebSocketEventType.ORDERBOOK_UPDATE,
+                WebSocketEventType.TRADE,
+                WebSocketEventType.MARKET_UPDATE,
+            ]:
                 self.events.append({
                     "type": event.event_type.value,
                     "market_id": event.market_id,
                     "platform": "polymarket",
                     "timestamp": event.timestamp.isoformat(),
-                    "data": event.data
+                    "data": _to_jsonable(event.data),
                 })
         
         ws.register_callback(WebSocketEventType.ORDERBOOK_UPDATE, on_event)
