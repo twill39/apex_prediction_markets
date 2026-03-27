@@ -4,6 +4,18 @@ Run from the repo root. If you use a virtualenv, prefix with `./venv/bin/python`
 
 ---
 
+## Kalshi: spread + volume market discovery (where it lives)
+
+**Logic:** `src/discovery/market_discovery.py` — `discover_kalshi_markets` (Kalshi only) and `discover_markets_for_making` (Polymarket + Kalshi).
+
+**CLI:** `scripts/discover_markets.py` — use `kalshi` or `both` as the source. Relevant flags include `--min-spread-pct`, `--min-volume-24h-kalshi`, `--max-results`, and `--kalshi-base`.
+
+**Strategy defaults:** `MarketMakingStrategy` calls `discover_markets_for_making` using thresholds from `MarketMakingSettings` in `src/config/settings.py` (`discovery_min_spread_pct`, `discovery_min_volume_24h_kalshi`, `discovery_min_liquidity`, `discovery_max_markets`; env vars prefixed `MARKET_MAKING_DISCOVERY_*`).
+
+See also the **Trading & discovery** table below for `discover_markets.py`.
+
+---
+
 ## Kalshi: batch data gathering (`data_gathering/`)
 
 | Script | What it does | Example |
