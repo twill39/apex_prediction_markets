@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 from datetime import datetime
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Union
 
 from .base import BaseWebSocketManager, WebSocketEvent, WebSocketEventType
 from src.config import get_credentials
@@ -115,24 +115,29 @@ class PolymarketWebSocket(BaseWebSocketManager):
             self.logger.error(f"Failed to unsubscribe from {channel}: {e}", exc_info=True)
             return False
     
-    def parse_message(self, message: str) -> Optional[WebSocketEvent]:
+    def parse_message(self, message: str) -> Union[Optional[WebSocketEvent], List[WebSocketEvent]]:
         """Parse Polymarket WebSocket message"""
+        if not message or not message.strip():
+            return None  # Empty ack/heartbeat — ignore
         try:
             data = json.loads(message)
-            # Some Polymarket WS endpoints send batched payloads as a list of messages.
-            # Since BaseWebSocketManager expects `parse_message()` to return a single event,
-            # we emit parsed events here and return None to avoid breaking the receive loop.
+            # Since BaseWebSocketManager expects `parse_message()` to return a single event or list of events,
+            # we aggregate parsed events here and return the list.
             if isinstance(data, list):
+                events = []
                 for item in data:
                     if not isinstance(item, dict):
                         continue
                     try:
                         ev = self.parse_message(json.dumps(item))
                         if ev:
-                            self._emit_event(ev)
+                            if isinstance(ev, list):
+                                events.extend(ev)
+                            else:
+                                events.append(ev)
                     except Exception:
                         continue
-                return None
+                return events if events else None
             
             # Polymarket documented schema uses `event_type`.
             event_type = data.get("event_type") or data.get("type") or ""
@@ -150,7 +155,7 @@ class PolymarketWebSocket(BaseWebSocketManager):
                 return self._parse_market_update(data)
             
             # Status/error messages
-            elif msg_type in ["status", "error", "auth_success"]:
+            elif event_type in ["status", "error", "auth_success"]:
                 self.logger.debug(f"Status message: {data}")
                 return None
             
@@ -163,7 +168,7 @@ class PolymarketWebSocket(BaseWebSocketManager):
             )
             
         except json.JSONDecodeError as e:
-            self.logger.error(f"Failed to parse message: {e}")
+            self.logger.debug(f"Ignored non-JSON message: {e} (content: {str(message)[:50]})")
             return None
         except Exception as e:
             self.logger.error(f"Error parsing message: {e}", exc_info=True)
@@ -248,7 +253,7 @@ class PolymarketWebSocket(BaseWebSocketManager):
         else:
             side = OrderSide.SELL
         
-        # Extract trading addresses
+        # Extract trading addresses (only present on user channel)
         metadata = {}
         if "maker" in data:
             metadata["maker"] = data["maker"]

@@ -331,6 +331,12 @@ class PaperTradingSimulator(BaseSimulator):
         
         self.logger.info("Starting paper trading simulator")
         
+        # Start strategies first so they can run discovery (e.g. market_making discovers markets)
+        # This must occur BEFORE websocket initialization because discovery may block the event loop
+        # and cause websocket timeout if the websocket is already connected.
+        for strategy in self.strategies:
+            await strategy.start()
+
         # Initialize WebSockets
         await self.initialize_websockets()
         
@@ -354,10 +360,6 @@ class PaperTradingSimulator(BaseSimulator):
             self.metrics = self._calculate_metrics()
             return
 
-        # Start strategies first so they can run discovery (e.g. market_making discovers markets)
-        for strategy in self.strategies:
-            await strategy.start()
-
         # Build subscription list: CLI/file markets + any strategy-discovered markets
         all_market_ids = list(self.markets)
         for strategy in self.strategies:
@@ -371,6 +373,20 @@ class PaperTradingSimulator(BaseSimulator):
         elif all_market_ids:
             self.logger.info(f"Subscribing to {len(all_market_ids)} market(s): {all_market_ids[:5]}{'...' if len(all_market_ids) > 5 else ''}")
         if all_market_ids:
+            # Wait for reconnect if WS dropped during strategy init
+            poly_ok = self.polymarket_ws is not None and self.polymarket_ws.is_connected
+            kalshi_ok = self.kalshi_ws is not None and self.kalshi_ws.is_connected
+            if not poly_ok and self.polymarket_ws:
+                self.logger.info("WebSocket disconnected — waiting for reconnect...")
+                for _ in range(10):
+                    await asyncio.sleep(0.5)
+                    if self.polymarket_ws.is_connected:
+                        poly_ok = True
+                        self.logger.info("WebSocket reconnected")
+                        break
+                if not poly_ok:
+                    self.logger.warning("WebSocket did not reconnect in time")
+
             if kalshi_ok and self.kalshi_ws:
                 for market_id in all_market_ids:
                     try:
@@ -378,10 +394,14 @@ class PaperTradingSimulator(BaseSimulator):
                     except Exception as e:
                         self.logger.warning(f"Kalshi subscribe {market_id}: {e}")
             if poly_ok and self.polymarket_ws:
-                try:
-                    await self.polymarket_ws.subscribe_assets(all_market_ids)
-                except Exception as e:
-                    self.logger.warning(f"Polymarket subscribe assets: {e}")
+                # Subscribe in batches to avoid overwhelming the server
+                batch_size = 50
+                for i in range(0, len(all_market_ids), batch_size):
+                    batch = all_market_ids[i:i + batch_size]
+                    try:
+                        await self.polymarket_ws.subscribe_assets(batch)
+                    except Exception as e:
+                        self.logger.warning(f"Polymarket subscribe batch {i // batch_size}: {e}")
         else:
             self.logger.info("No markets to subscribe to; use --markets/--markets-file or run market_making for discovery.")
 

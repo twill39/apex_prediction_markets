@@ -9,6 +9,11 @@ from .market_discovery import (
     discover_kalshi_markets,
     discover_markets_for_making,
 )
+from .copy_trading_market_discovery import (
+    discover_markets_for_copying,
+    discover_insider_prone_markets,
+    discover_markets_from_traders,
+)
 
 __all__ = [
     "discover_traders",
@@ -16,4 +21,7 @@ __all__ = [
     "discover_polymarket_markets",
     "discover_kalshi_markets",
     "discover_markets_for_making",
+    "discover_markets_for_copying",
+    "discover_insider_prone_markets",
+    "discover_markets_from_traders",
 ]

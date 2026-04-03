@@ -89,12 +89,14 @@ class BaseWebSocketManager(ABC):
         if callback in self.event_callbacks[event_type]:
             self.event_callbacks[event_type].remove(callback)
     
-    def _emit_event(self, event: WebSocketEvent):
+    async def _emit_event(self, event: WebSocketEvent):
         """Emit an event to all registered callbacks"""
         callbacks = self.event_callbacks.get(event.event_type, [])
         for callback in callbacks:
             try:
-                callback(event)
+                result = callback(event)
+                if asyncio.iscoroutine(result):
+                    await result
             except Exception as e:
                 self.logger.error(f"Error in callback for {event.event_type}: {e}", exc_info=True)
     
@@ -114,7 +116,7 @@ class BaseWebSocketManager(ABC):
         pass
     
     @abstractmethod
-    def parse_message(self, message: str) -> Optional[WebSocketEvent]:
+    def parse_message(self, message: str) -> Union[Optional[WebSocketEvent], List[WebSocketEvent]]:
         """Parse incoming WebSocket message into a WebSocketEvent"""
         pass
     
@@ -165,7 +167,7 @@ class BaseWebSocketManager(ABC):
                 data={"url": self.url},
                 timestamp=datetime.utcnow()
             )
-            self._emit_event(event)
+            await self._emit_event(event)
             self.logger.info("WebSocket connected successfully")
             
         except Exception as e:
@@ -190,7 +192,7 @@ class BaseWebSocketManager(ABC):
                     data={},
                     timestamp=datetime.utcnow()
                 )
-                self._emit_event(event)
+                await self._emit_event(event)
                 self.logger.info("WebSocket disconnected")
     
     async def send_message(self, message: Dict[str, Any]):
@@ -212,10 +214,14 @@ class BaseWebSocketManager(ABC):
                     break
                 
                 message = await self.websocket.recv()
-                event = self.parse_message(message)
+                events = self.parse_message(message)
                 
-                if event:
-                    self._emit_event(event)
+                if events:
+                    if isinstance(events, list):
+                        for event in events:
+                            await self._emit_event(event)
+                    else:
+                        await self._emit_event(events)
                     
             except ConnectionClosed:
                 self.logger.warning("WebSocket connection closed")
@@ -232,7 +238,7 @@ class BaseWebSocketManager(ABC):
                     data={"error": str(e)},
                     timestamp=datetime.utcnow()
                 )
-                self._emit_event(error_event)
+                await self._emit_event(error_event)
     
     async def _reconnect_loop(self):
         """Reconnection loop"""

@@ -22,7 +22,7 @@ def ssl_context() -> ssl.SSLContext:
 def get_json(url: str, timeout: int = 15) -> Optional[Any]:
     """GET URL and parse JSON. Returns None on failure."""
     try:
-        req = urllib.request.Request(url)
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         with urllib.request.urlopen(req, timeout=timeout, context=ssl_context()) as resp:
             return json.loads(resp.read().decode())
     except Exception:

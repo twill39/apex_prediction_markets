@@ -1,0 +1,58 @@
+strategy: copy_trading
+enabled: true
+use_kalshi: false
+max_position_size: 1000.0
+max_traders: 10
+discovery:
+  trader_max_volume: null
+  trader_min_pnl: null
+  trader_min_pnl_per_vol: null
+  time_period: "WEEK"
+
+# Screener configurations
+screeners:
+  grinder:
+    enabled: true
+    # Require 20-200 closed positions — enough track record to be
+    # statistically meaningful, but cap out scatter traders with 500+
+    # micro-bets who dilute signal quality.
+    min_positions: 20
+    max_positions: 200
+    # 65% is well above break-even on binary markets (~52-55% after fees).
+    # Insiders and strong quants reliably clear this bar.
+    min_win_rate: 0.65
+    # $1k total PnL proves they aren't just winning tiny amounts
+    min_total_pnl: 1000.0
+    # $10/trade avg ensures each win is meaningful enough to copy
+    min_avg_pnl_per_trade: 10.0
+
+  whale:
+    enabled: true
+    # $5k per trade — catches mid-size conviction bets, not just mega-whales.
+    # Many insiders trade in the $5k-$50k range to avoid detection.
+    min_trade_size_usd: 5000.0
+    min_days_to_resolution: 7
+    # Insider whales are concentrated — 10 markets max keeps the filter tight.
+    # Scatter traders who spray $5k across 50 markets get rejected.
+    max_unique_markets: 10
+    # $2k total PnL proves actual profitability, not just lucky on one bet
+    min_total_pnl: 2000.0
+    # 45% is lenient for whales — they often have lower hit rate but
+    # massive R:R on their winners (buy at 10¢, resolve at $1).
+    min_win_rate: 0.45
+    # Need at least 3 closed positions to evaluate — no blind trust
+    min_closed_positions: 3
+
+  trendsetter:
+    enabled: true
+    # 10% margin per round trip — captures traders who buy dips and
+    # sell pumps, even if they don't hold to resolution.
+    min_capture_margin: 0.10
+    # 0.5 hours min hold filters out MEV bots and scalpers
+    min_hold_time_hours: 0.5
+    # 5 round trips gives statistical confidence the margin is real
+    min_round_trips: 5
+    # 55% win rate on round trips — slightly above coinflip
+    min_win_rate: 0.55
+    # $100 avg trade size filters micro-bets but catches mid-size traders
+    min_avg_trade_size: 100.0

@@ -5,6 +5,9 @@ from typing import List, Optional
 from ._http import get_json
 
 DATA_API_LEADERBOARD = "https://data-api.polymarket.com/v1/leaderboard"
+DATA_API_TRADES = "https://data-api.polymarket.com/v1/trades"
+DATA_API_CLOSED_POSITIONS = "https://data-api.polymarket.com/v1/closed-positions"
+DATA_API_POSITIONS = "https://data-api.polymarket.com/v1/positions"
 
 # Leaderboard limit per request (API max 50)
 PAGE_LIMIT = 50
@@ -112,3 +115,63 @@ def _num(v) -> Optional[float]:
         return float(v)
     except (TypeError, ValueError):
         return None
+
+
+def get_user_trades(proxy_wallet: str, limit: int = 1000) -> List[dict]:
+    """Fetch recent trades for a specific user"""
+    url = f"{DATA_API_TRADES}?user={proxy_wallet}&limit={limit}"
+    data = get_json(url)
+    if isinstance(data, list):
+        return data
+    return []
+
+
+def get_closed_positions(proxy_wallet: str, limit: int = 100) -> List[dict]:
+    """Fetch closed positions for a specific user to evaluate PnL"""
+    url = f"{DATA_API_CLOSED_POSITIONS}?user={proxy_wallet}&limit={limit}"
+    data = get_json(url)
+    if isinstance(data, list):
+        return data
+    return []
+
+
+def get_recent_trades(limit: int = 1000) -> List[dict]:
+    """Fetch recent global trades to scan for new active users"""
+    url = f"{DATA_API_TRADES}?limit={limit}"
+    data = get_json(url)
+    if isinstance(data, list):
+        return data
+    return []
+
+
+def get_user_positions(proxy_wallet: str, limit: int = 100) -> List[dict]:
+    """Fetch current open positions for a user to evaluate market concentration."""
+    url = f"{DATA_API_POSITIONS}?user={proxy_wallet}&limit={limit}"
+    data = get_json(url)
+    if isinstance(data, list):
+        return data
+    return []
+
+
+def get_trader_profile(proxy_wallet: str, time_period: str = "ALL") -> Optional[dict]:
+    """Fetch leaderboard-level stats for a single user.
+
+    Returns a dict with keys like vol, pnl, rank, or None if not found.
+    """
+    url = (
+        f"{DATA_API_LEADERBOARD}?"
+        f"timePeriod={time_period}&limit=1&proxyWallet={proxy_wallet}"
+    )
+    data = get_json(url)
+    if isinstance(data, list) and data:
+        entry = data[0]
+        return {
+            "proxyWallet": entry.get("proxyWallet") or entry.get("proxy_wallet"),
+            "userName": entry.get("userName") or entry.get("user_name") or "",
+            "vol": _num(entry.get("vol")),
+            "pnl": _num(entry.get("pnl")),
+            "rank": entry.get("rank"),
+            "numMarkets": entry.get("numMarkets") or entry.get("num_markets"),
+        }
+    return None
+
