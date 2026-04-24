@@ -16,13 +16,15 @@ def _filter_markets(
     ticker_contains: list,
     event_contains: list,
 ) -> list:
-    """Include market if (no ticker_contains OR ticker contains any) AND (no event_contains OR event_ticker contains any). Case-insensitive."""
+    """Include market if (no ticker_contains OR ticker contains any) AND (no event_contains OR event_ticker contains any). Case-insensitive. Always excludes MVE combo markets."""
     out = []
     for m in markets:
         ticker = (m.get("ticker") or "").strip()
         event_ticker = (m.get("event_ticker") or "").strip()
         ticker_lower = ticker.lower()
         event_lower = event_ticker.lower()
+        if ticker_lower.startswith("kxmve"):
+            continue
         if ticker_contains and not any(sub.lower() in ticker_lower for sub in ticker_contains):
             continue
         if event_contains and not any(sub.lower() in event_lower for sub in event_contains):
@@ -57,7 +59,13 @@ def main():
         "--limit",
         type=int,
         default=1000,
-        help="Page size for API (default: 1000)",
+        help="Page size for API (default: 50)",
+    )
+    parser.add_argument(
+        "--max-markets",
+        type=int,
+        default=None,
+        help="Stop after fetching this many markets total (omit to fetch all)",
     )
     args = parser.parse_args()
 
@@ -65,7 +73,12 @@ def main():
     client = KalshiClient()
 
     logger.info("Fetching all historical markets (paginated)")
-    markets = client.get_historical_markets_all_pages(limit=args.limit)
+    markets = client.get_historical_markets_all_pages(
+        limit=args.limit,
+        max_markets=args.max_markets,
+        event_ticker=args.event_contains,
+        tickers=args.ticker_contains,
+    )
     logger.info("Fetched %d markets", len(markets))
 
     ticker_subs = [s.strip() for s in (args.ticker_contains or "").split(",") if s.strip()]
