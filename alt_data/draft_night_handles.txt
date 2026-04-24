@@ -1,0 +1,81 @@
+# NFC EAST
+kyle_youmans
+ClarenceHillJr
+BenStandig
+John_Keim
+JordanRaanan
+NYPost_Schwartz
+Jeff_McLane
+EliotShorrParks
+
+# NFC NORTH
+AndyHermanNFL
+mattschneidman
+alec_lewis
+BenGoessling
+BradBiggs
+kfishbain
+colton_pouncy
+ttwentyman
+
+# NFC SOUTH
+NFLSTROUD
+GregAuman
+DOrlandoLED
+Tori_McElhaney
+JosephPerson
+DarinGantt
+Sheena_Marie3
+nick_underhill
+MikeTriplett
+
+# NFC WEST
+Gbellseattle
+bcondotta
+Cardschatter
+azbobbymac
+LombardiHimself
+Eric_Branch
+CamInman
+JourdanRodrigue
+
+# AFC EAST
+MikeReiss
+ezlazar
+BrianCoz
+RichCimini
+SalMaiorana
+SalSports
+DavidFurones_
+schadjoe
+
+# AFC NORTH
+MarkKaboly
+Alex_Kozora
+PaulDehnerJr
+KelseyLConway
+jamisonhensley
+jeffzrebiec
+MaryKayCabot
+AkronJackson
+
+# AFC SOUTH
+GMbremer
+mchappell51
+JohnHCrumpler
+AaronWilson_NFL
+Demetrius82
+_John_Shipley
+nicksuss
+terrymc13
+
+# AFC WEST
+mikeklis
+TroyRenck
+danielrpopper
+krisrhim1
+VicTafur
+PGutierrezESPN
+mattderrick
+ByNateTaylor
+jessenewell

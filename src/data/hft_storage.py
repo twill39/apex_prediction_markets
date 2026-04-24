@@ -2,9 +2,17 @@
 
 import json
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 PLATFORMS = ("kalshi", "polymarket")
+
+# Compact deltas (deltas.jsonl): each event is [op, side, price] or [op, side, price, size]
+OP_DELETE = 0
+OP_SET = 1
+SIDE_BID = 0
+SIDE_ASK = 1
+
+DeltaEvent = Union[Dict[str, Any], List[Any]]
 
 
 def get_hft_dir(output_root: str, platform: str, market_id: str) -> Path:
@@ -27,6 +35,11 @@ def deltas_path(output_root: str, platform: str, market_id: str) -> Path:
 def frames_path(output_root: str, platform: str, market_id: str) -> Path:
     """Path to frames.jsonl for a market (full snapshot per frame)."""
     return get_hft_dir(output_root, platform, market_id) / "frames.jsonl"
+
+
+def trades_path(output_root: str, platform: str, market_id: str) -> Path:
+    """Path to trades.jsonl (WebSocket public executions, one JSON object per line)."""
+    return get_hft_dir(output_root, platform, market_id) / "trades.jsonl"
 
 
 def meta_path(output_root: str, platform: str, market_id: str) -> Path:
@@ -111,14 +124,33 @@ def append_delta_line(
     platform: str,
     market_id: str,
     unix_ts: float,
-    events: List[Dict[str, Any]],
+    events: List[List[Any]],
 ) -> Path:
-    """Append one JSON line to deltas.jsonl. events = [{op, side, price?, size?}, ...]."""
+    """Append one JSON line to deltas.jsonl.
+
+    Format: ``{"t": unix_ts, "e": [[op, side, price], ...]}`` with minimal JSON separators.
+    Each event: ``[op, side, price]`` (delete) or ``[op, side, price, size]`` (set).
+    ``op``: 0=delete, 1=set. ``side``: 0=bid, 1=ask.
+    """
     p = deltas_path(output_root, platform, market_id)
     ensure_dir(p)
-    line = json.dumps({"t": unix_ts, "events": events}) + "\n"
+    line = json.dumps({"t": unix_ts, "e": events}, separators=(",", ":")) + "\n"
     with open(p, "a") as f:
         f.write(line)
+    return p
+
+
+def append_trade_line(
+    output_root: str,
+    platform: str,
+    market_id: str,
+    record: Dict[str, Any],
+) -> Path:
+    """Append one JSON line to trades.jsonl (caller supplies serializable dict)."""
+    p = trades_path(output_root, platform, market_id)
+    ensure_dir(p)
+    with open(p, "a") as f:
+        f.write(json.dumps(record, ensure_ascii=False, default=str) + "\n")
     return p
 
 
@@ -170,33 +202,37 @@ def load_snapshot_as_state(output_root: str, platform: str, market_id: str) -> O
 def compute_delta(
     prev: Dict[str, Dict[float, float]],
     curr: Dict[str, Dict[float, float]],
-) -> List[Dict[str, Any]]:
-    """Compute delta events from prev to curr. Returns list of {op, side, price, size?}."""
-    events: List[Dict[str, Any]] = []
-    for side in ("bids", "asks"):
-        prev_side = prev.get(side) or {}
-        curr_side = curr.get(side) or {}
+) -> List[List[Any]]:
+    """Compute delta events from prev to curr.
+
+    Returns compact rows: ``[OP_DELETE, side, price]`` or ``[OP_SET, side, price, size]``
+    with ``side`` in ``{SIDE_BID, SIDE_ASK}``.
+    """
+    events: List[List[Any]] = []
+    for side_name, side_code in (("bids", SIDE_BID), ("asks", SIDE_ASK)):
+        prev_side = prev.get(side_name) or {}
+        curr_side = curr.get(side_name) or {}
         all_prices = set(prev_side.keys()) | set(curr_side.keys())
         for price in all_prices:
             prev_sz = prev_side.get(price)
             curr_sz = curr_side.get(price)
             if curr_sz is None or curr_sz <= 0:
                 if prev_sz is not None and prev_sz > 0:
-                    events.append({"op": "delete", "side": side[:-1], "price": price})
+                    events.append([OP_DELETE, side_code, price])
             else:
                 if prev_sz != curr_sz:
-                    events.append({"op": "set", "side": side[:-1], "price": price, "size": curr_sz})
+                    events.append([OP_SET, side_code, price, curr_sz])
     return events
 
 
-def apply_delta_events(book_state: Dict[str, Dict[float, float]], events: List[Dict[str, Any]]) -> None:
-    """Apply delta events in-place to book_state. side in events is 'bid' or 'ask'."""
-    for ev in events or []:
+def _apply_one_delta_event(book_state: Dict[str, Dict[float, float]], ev: DeltaEvent) -> None:
+    """Apply a single delta to book_state (compact list or legacy dict)."""
+    if isinstance(ev, dict):
         op = ev.get("op")
         side_key = "bids" if ev.get("side") == "bid" else "asks"
         price = ev.get("price")
         if price is None:
-            continue
+            return
         price_f = float(price)
         if side_key not in book_state:
             book_state[side_key] = {}
@@ -208,6 +244,39 @@ def apply_delta_events(book_state: Dict[str, Dict[float, float]], events: List[D
                 book_state[side_key][price_f] = float(sz)
             else:
                 book_state[side_key].pop(price_f, None)
+        return
+
+    if not isinstance(ev, (list, tuple)) or len(ev) < 3:
+        return
+    try:
+        op = int(ev[0])
+        side_code = int(ev[1])
+    except (TypeError, ValueError):
+        return
+    price_f = float(ev[2])
+    side_key = "bids" if side_code == SIDE_BID else "asks"
+    if side_key not in book_state:
+        book_state[side_key] = {}
+    if op == OP_DELETE:
+        book_state[side_key].pop(price_f, None)
+    elif op == OP_SET:
+        if len(ev) < 4:
+            return
+        sz = ev[3]
+        if sz is not None and float(sz) > 0:
+            book_state[side_key][price_f] = float(sz)
+        else:
+            book_state[side_key].pop(price_f, None)
+
+
+def apply_delta_events(book_state: Dict[str, Dict[float, float]], events: List[DeltaEvent]) -> None:
+    """Apply delta events in-place to book_state.
+
+    Accepts **compact** rows ``[op, side, price]`` / ``[op, side, price, size]`` (see module constants)
+    or **legacy** dicts ``{op, side, price, size?}`` with string ``op``/``side``.
+    """
+    for ev in events or []:
+        _apply_one_delta_event(book_state, ev)
 
 
 def stream_deltas(
@@ -216,8 +285,11 @@ def stream_deltas(
     market_id: str,
     start_ts: Optional[float] = None,
     end_ts: Optional[float] = None,
-) -> Iterator[Tuple[float, List[Dict[str, Any]]]]:
-    """Yield (unix_ts, events) for each line in deltas.jsonl, optionally filtered by start_ts/end_ts."""
+) -> Iterator[Tuple[float, List[DeltaEvent]]]:
+    """Yield (unix_ts, events) for each line in deltas.jsonl, optionally filtered by start_ts/end_ts.
+
+    Reads **compact** lines ``{"t","e"}`` or legacy ``{"t","events"}`` with dict-based events.
+    """
     p = deltas_path(output_root, platform, market_id)
     if not p.is_file():
         return
@@ -238,5 +310,7 @@ def stream_deltas(
                 continue
             if end_ts is not None and t_float > end_ts:
                 continue
-            events = rec.get("events") or []
+            events = rec.get("e")
+            if events is None:
+                events = rec.get("events") or []
             yield (t_float, events)

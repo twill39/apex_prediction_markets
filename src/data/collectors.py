@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 import requests
-import re
 
 
 class DataCollector(ABC):
@@ -28,56 +27,88 @@ class TwitterCollector(DataCollector):
             "User-Agent": "ApexPredictionMarkets/1.0"
         }
     
-    async def collect(self, keywords: List[str]) -> Dict[str, Any]:
-        """Collect Twitter data for keywords"""
-        # Build search query
-        query = " OR ".join(keywords[:5])  # Limit to 5 keywords
-        
+    async def collect_query(
+        self,
+        query: str,
+        *,
+        return_tweets: bool = False,
+    ) -> Dict[str, Any]:
+        """Run recent search for a raw X query string; optional tweet payloads for offline export."""
+        query = (query or "").strip()
+        if not query:
+            return {
+                "query": query,
+                "sentiment_score": 0.0,
+                "mention_count": 0,
+                "engagement_score": 0.0,
+                "tweets_analyzed": 0,
+                "error": "empty query",
+                "collected_at": datetime.utcnow().isoformat(),
+                **({"tweets": []} if return_tweets else {}),
+            }
+
         try:
-            # Search recent tweets
             url = f"{self.base_url}/tweets/search/recent"
             params = {
                 "query": query,
                 "max_results": 100,
                 "tweet.fields": "created_at,public_metrics,text",
-                "expansions": "author_id"
+                "expansions": "author_id",
             }
-            
+
             response = requests.get(url, headers=self.headers, params=params, timeout=10)
             response.raise_for_status()
             data = response.json()
-            
-            tweets = data.get("data", [])
-            
-            # Calculate sentiment (simple keyword-based)
+
+            tweets = data.get("data") or []
+
             sentiment_score = self._calculate_sentiment(tweets)
-            
-            # Calculate metrics
             total_mentions = len(tweets)
             total_engagement = sum(
-                t.get("public_metrics", {}).get("like_count", 0) +
-                t.get("public_metrics", {}).get("retweet_count", 0)
+                t.get("public_metrics", {}).get("like_count", 0)
+                + t.get("public_metrics", {}).get("retweet_count", 0)
                 for t in tweets
             )
-            
-            return {
+
+            out: Dict[str, Any] = {
+                "query": query,
                 "sentiment_score": sentiment_score,
                 "mention_count": total_mentions,
                 "engagement_score": total_engagement,
                 "tweets_analyzed": len(tweets),
-                "collected_at": datetime.utcnow().isoformat()
+                "collected_at": datetime.utcnow().isoformat(),
             }
-            
+            if return_tweets:
+                out["tweets"] = [
+                    {
+                        "id": t.get("id"),
+                        "created_at": t.get("created_at"),
+                        "text": t.get("text"),
+                        "public_metrics": t.get("public_metrics"),
+                    }
+                    for t in tweets
+                ]
+            return out
+
         except Exception as e:
-            # Return default values on error
-            return {
+            err: Dict[str, Any] = {
+                "query": query,
                 "sentiment_score": 0.0,
                 "mention_count": 0,
                 "engagement_score": 0.0,
                 "tweets_analyzed": 0,
                 "error": str(e),
-                "collected_at": datetime.utcnow().isoformat()
+                "collected_at": datetime.utcnow().isoformat(),
             }
+            if return_tweets:
+                err["tweets"] = []
+            return err
+
+    async def collect(self, keywords: List[str]) -> Dict[str, Any]:
+        """Collect Twitter data for keywords (first five joined with OR)."""
+        query = " OR ".join(keywords[:5])
+        result = await self.collect_query(query, return_tweets=False)
+        return {k: v for k, v in result.items() if k != "tweets"}
     
     def _calculate_sentiment(self, tweets: List[Dict]) -> float:
         """Calculate sentiment score from tweets (simple keyword-based)"""

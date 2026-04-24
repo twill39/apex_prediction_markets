@@ -1,0 +1,396 @@
+{"t": 1776975856.396708, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776975859.432927, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 600.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 240.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2610.0}]}
+{"t": 1776975866.4869819, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776975870.536895, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776975878.59487, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2352.0}]}
+{"t": 1776975882.637974, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776975889.700941, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776975913.861079, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 600.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 240.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2610.0}]}
+{"t": 1776975917.960892, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776975940.061205, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2352.0}]}
+{"t": 1776975943.110956, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776975947.2255669, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776975951.2976189, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2352.0}]}
+{"t": 1776975954.332581, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776975959.372451, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776975971.450849, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 600.0}]}
+{"t": 1776975972.4612129, "events": [{"op": "set", "side": "bid", "price": 0.7, "size": 240.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2610.0}]}
+{"t": 1776975978.524107, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776975989.593303, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776976002.718677, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 600.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 240.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2610.0}]}
+{"t": 1776976005.821455, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976011.8745532, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776976021.967751, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 600.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 240.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2610.0}]}
+{"t": 1776976031.0763671, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976039.130999, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776976041.146323, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 600.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 240.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2610.0}]}
+{"t": 1776976044.185159, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2352.0}]}
+{"t": 1776976047.209746, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976050.238752, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776976058.306615, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2352.0}]}
+{"t": 1776976061.337662, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976065.3873029, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776976074.460224, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 600.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 240.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2610.0}]}
+{"t": 1776976078.494921, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976085.548361, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2352.0}]}
+{"t": 1776976089.58958, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976092.6074328, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776976095.6349592, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 600.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 240.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2610.0}]}
+{"t": 1776976100.698726, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976113.775799, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776976116.79982, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 600.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 240.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2610.0}]}
+{"t": 1776976128.8931751, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976130.9047801, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776976135.934583, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2352.0}]}
+{"t": 1776976139.976351, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976152.035327, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2352.0}]}
+{"t": 1776976154.063997, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976172.213068, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776976176.259373, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 600.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 240.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2610.0}]}
+{"t": 1776976198.435571, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976204.476952, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2352.0}]}
+{"t": 1776976207.508864, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976215.5757089, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776976218.6080482, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 600.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 240.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2610.0}]}
+{"t": 1776976222.6332319, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976223.6436858, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776976254.822479, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 600.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 240.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2610.0}]}
+{"t": 1776976260.885631, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976276.0147579, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776976280.070851, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 600.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 240.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2610.0}]}
+{"t": 1776976285.139929, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2352.0}]}
+{"t": 1776976287.161626, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976301.276474, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2352.0}]}
+{"t": 1776976304.313708, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}]}
+{"t": 1776976305.355718, "events": [{"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976307.3653572, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776976323.4797351, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 600.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 240.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2610.0}]}
+{"t": 1776976333.587355, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976335.619046, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776976339.6474261, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 600.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 240.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2610.0}]}
+{"t": 1776976340.6580539, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2352.0}]}
+{"t": 1776976343.692986, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976344.703347, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2352.0}]}
+{"t": 1776976350.768629, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976351.775647, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2352.0}]}
+{"t": 1776976355.830212, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976359.87871, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776976362.91397, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 600.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 240.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2610.0}]}
+{"t": 1776976390.085834, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976393.108543, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776976415.243485, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 600.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 240.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2610.0}]}
+{"t": 1776976423.3098712, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976425.340163, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2352.0}]}
+{"t": 1776976428.364198, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976431.391558, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776976436.4190028, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 600.0}]}
+{"t": 1776976437.425882, "events": [{"op": "set", "side": "bid", "price": 0.7, "size": 240.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2610.0}]}
+{"t": 1776976439.456811, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976442.480271, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776976443.4918458, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 600.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 240.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2610.0}]}
+{"t": 1776976452.543754, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976455.5719721, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776976458.60728, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 600.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 240.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2610.0}]}
+{"t": 1776976462.638276, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976465.66493, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2352.0}]}
+{"t": 1776976468.700096, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976472.725442, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776976477.761339, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2352.0}]}
+{"t": 1776976480.793513, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976484.820907, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 615.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 245.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2620.0}]}
+{"t": 1776976490.901129, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 600.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 240.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2610.0}]}
+{"t": 1776976506.004798, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 645.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 256.0}, {"op": "set", "side": "bid", "price": 0.77, "size": 2641.0}]}
+{"t": 1776976513.0576482, "events": [{"op": "set", "side": "bid", "price": 0.77, "size": 289.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2507.0}]}
+{"t": 1776976521.1357608, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 631.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2787.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 251.0}, {"op": "delete", "side": "bid", "price": 0.77}]}
+{"t": 1776976536.203557, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2507.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}]}
+{"t": 1776976538.221212, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 663.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2807.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 261.0}]}
+{"t": 1776976542.257569, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 640.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2793.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 254.0}]}
+{"t": 1776976545.305117, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 629.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2785.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 250.0}]}
+{"t": 1776976549.3694139, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 624.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2781.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 248.0}]}
+{"t": 1776976552.38733, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 621.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2780.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 247.0}]}
+{"t": 1776976560.430049, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 619.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2779.0}]}
+{"t": 1776976565.468847, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 618.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2778.0}]}
+{"t": 1776976569.49947, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2507.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}]}
+{"t": 1776976571.5276349, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 663.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2807.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 261.0}]}
+{"t": 1776976574.550605, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 640.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2793.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 254.0}]}
+{"t": 1776976576.575867, "events": [{"op": "set", "side": "bid", "price": 0.78, "size": 2785.0}]}
+{"t": 1776976577.582925, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 629.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 250.0}]}
+{"t": 1776976579.598368, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 624.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2781.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 248.0}]}
+{"t": 1776976582.626801, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 621.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2780.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 247.0}]}
+{"t": 1776976587.65838, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 619.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2779.0}]}
+{"t": 1776976592.712306, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 618.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2778.0}]}
+{"t": 1776976605.780865, "events": [{"op": "set", "side": "bid", "price": 0.7, "size": 246.0}]}
+{"t": 1776976627.946018, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2507.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}]}
+{"t": 1776976630.9735959, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 663.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2807.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 261.0}]}
+{"t": 1776976637.021386, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 640.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2793.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 254.0}]}
+{"t": 1776976648.087174, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 629.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2785.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 250.0}]}
+{"t": 1776976650.106755, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 624.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2781.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 248.0}]}
+{"t": 1776976653.130749, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 621.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2780.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 247.0}]}
+{"t": 1776976660.164791, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 619.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2779.0}]}
+{"t": 1776976688.379301, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 618.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2778.0}]}
+{"t": 1776976694.6291242, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2507.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}]}
+{"t": 1776976697.8306718, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 663.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2807.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 261.0}]}
+{"t": 1776976703.879584, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 640.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2793.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 254.0}]}
+{"t": 1776976721.023626, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 629.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2785.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 250.0}]}
+{"t": 1776976729.136172, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 624.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2781.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 248.0}]}
+{"t": 1776976738.2212422, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 621.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2780.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 247.0}]}
+{"t": 1776976740.2347279, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 619.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2779.0}]}
+{"t": 1776976752.540415, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 618.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2778.0}]}
+{"t": 1776976760.616456, "events": [{"op": "set", "side": "bid", "price": 0.7, "size": 246.0}]}
+{"t": 1776976798.966105, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2507.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}]}
+{"t": 1776976803.02252, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 663.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2807.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 261.0}]}
+{"t": 1776976807.082735, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 640.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2793.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 254.0}]}
+{"t": 1776976813.173311, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 629.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2785.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 250.0}]}
+{"t": 1776976816.192041, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 624.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2781.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 248.0}]}
+{"t": 1776976820.246989, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 621.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2780.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 247.0}]}
+{"t": 1776976823.281095, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2507.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}]}
+{"t": 1776976826.322222, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 663.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2807.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 261.0}]}
+{"t": 1776976830.3663218, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 640.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2793.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 254.0}]}
+{"t": 1776976835.417113, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 629.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2785.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 250.0}]}
+{"t": 1776976839.444206, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 624.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2781.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 248.0}]}
+{"t": 1776976844.4879239, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 621.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2780.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 247.0}]}
+{"t": 1776976857.581012, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 619.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2779.0}]}
+{"t": 1776976863.631295, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 618.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2778.0}]}
+{"t": 1776976873.730138, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2507.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}]}
+{"t": 1776976876.771445, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 663.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2807.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 261.0}]}
+{"t": 1776976880.821571, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 640.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2793.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 254.0}]}
+{"t": 1776976886.884876, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 629.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2785.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 250.0}]}
+{"t": 1776976890.94024, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 624.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2781.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 248.0}]}
+{"t": 1776976894.0004108, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 621.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2780.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 247.0}]}
+{"t": 1776976902.095287, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 619.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2779.0}]}
+{"t": 1776976906.1795998, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 618.0}]}
+{"t": 1776976907.188873, "events": [{"op": "set", "side": "bid", "price": 0.78, "size": 2778.0}]}
+{"t": 1776976912.4020412, "events": [{"op": "set", "side": "bid", "price": 0.7, "size": 246.0}]}
+{"t": 1776977027.54447, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2507.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}]}
+{"t": 1776977031.587998, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 663.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2807.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 261.0}]}
+{"t": 1776977037.65825, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 640.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2793.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 254.0}]}
+{"t": 1776977052.744798, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 629.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2785.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 250.0}]}
+{"t": 1776977058.819532, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 624.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2781.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 248.0}]}
+{"t": 1776977076.963868, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 621.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2780.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 247.0}]}
+{"t": 1776977088.161928, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 619.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2779.0}]}
+{"t": 1776977095.277729, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 618.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2778.0}]}
+{"t": 1776977111.429607, "events": [{"op": "set", "side": "bid", "price": 0.7, "size": 246.0}]}
+{"t": 1776977130.577865, "events": [{"op": "set", "side": "bid", "price": 0.98, "size": 212.0}, {"op": "set", "side": "bid", "price": 0.78, "size": 2507.0}, {"op": "set", "side": "bid", "price": 0.7, "size": 111.0}]}
+{"t":1776978859.757362,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776978869.856717,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776978872.894586,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776978909.223537,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776978912.262826,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776978979.146398,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776978984.203895,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979006.375099,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979009.408774,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979021.503144,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979023.5258439,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979081.134896,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979084.171616,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979102.3232388,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979106.3717089,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979111.404879,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979114.437589,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979130.556236,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979133.575329,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979135.5978959,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979139.636075,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979162.765724,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979165.8170938,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979208.261129,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979210.3045912,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979250.753281,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979252.8169029,"e":[[1,0,0.98,962.0]]}
+{"t":1776979286.150522,"e":[[1,0,0.98,212.0]]}
+{"t":1776979289.188255,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979322.47595,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979327.535894,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979357.799739,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979358.815964,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979373.992595,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979378.053979,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979393.279681,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979396.311556,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979404.426751,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979408.486134,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979421.670975,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979424.820554,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979440.0022578,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979443.037045,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979499.5889611,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979502.631507,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979636.021319,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979637.049831,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979641.110275,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979645.163307,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979673.505915,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979677.5577102,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979714.936487,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979720.003347,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979736.216362,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979738.25713,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979820.0560918,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979824.103594,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979832.244597,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979835.291805,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979866.614618,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979870.6450438,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776979948.596159,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776979952.65566,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776980002.208147,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776980007.280448,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776980031.561755,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776980034.6140401,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776980105.530238,"e":[[1,0,0.99,2416.0200000000004]]}
+{"t":1776980216.500921,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776980221.5912058,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776980339.870958,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776980346.9657018,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776980359.084876,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776980362.116677,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776980428.823528,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776980431.865155,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776980438.9541829,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776980441.991785,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776980488.560389,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776980490.596148,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776980524.08113,"e":[[1,0,0.98,962.0],[1,0,0.78,2507.0]]}
+{"t":1776980562.5381172,"e":[[1,0,0.98,212.0]]}
+{"t":1776980566.604689,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776980577.735656,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776980578.763276,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776980589.9223082,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776980592.981667,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776980758.610584,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776980763.703736,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776980842.4296498,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776980846.484276,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776980929.387115,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776980932.421974,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776980942.557023,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776980945.5937312,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776980957.745952,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776980960.798671,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776980976.982363,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776980980.029228,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776980995.2883961,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776980999.340385,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776981008.444097,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776981013.51339,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776981018.585931,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776981021.6490638,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776981039.859245,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776981043.911885,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776981072.162536,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776981074.199422,"e":[[1,0,0.98,712.0]]}
+{"t":1776981075.2181,"e":[[1,0,0.78,2757.0]]}
+{"t":1776981087.326062,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776981089.372341,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776981100.51648,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776981102.5422,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776981193.665442,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776981195.704865,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776981206.826984,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776981209.856044,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776981249.287044,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776981253.340408,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776981263.4313338,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776981266.4803982,"e":[[1,0,0.98,712.0],[1,0,0.78,2757.0]]}
+{"t":1776981297.8282409,"e":[[1,0,0.98,212.0],[1,0,0.78,2507.0]]}
+{"t":1776981303.909328,"e":[[0,0,0.78],[1,0,0.71,2667.0]]}
+{"t":1776981600.633235,"e":[[0,0,0.7],[1,0,0.01,13.0]]}
+{"t":1776983300.837282,"e":[[1,0,0.01,50013.0]]}
+{"t":1776984600.5990279,"e":[[1,0,0.99,1516.0200000000004]]}
+{"t":1776984750.984461,"e":[[1,0,0.99,2266.0200000000004]]}
+{"t":1776986009.19275,"e":[[1,0,0.99,1516.0200000000004]]}
+{"t":1776986078.7794409,"e":[[0,0,0.71],[1,0,0.61,2868.0],[1,0,0.01,50000.0]]}
+{"t":1776986313.663645,"e":[[1,0,0.98,462.0]]}
+{"t":1776986363.351876,"e":[[1,0,0.98,212.0]]}
+{"t":1776986364.384167,"e":[[1,0,0.98,462.0]]}
+{"t":1776986383.65274,"e":[[1,0,0.98,212.0]]}
+{"t":1776986384.680605,"e":[[1,0,0.98,462.0]]}
+{"t":1776986397.8622699,"e":[[1,0,0.98,212.0]]}
+{"t":1776986401.9132118,"e":[[1,0,0.98,462.0]]}
+{"t":1776986419.158252,"e":[[1,0,0.98,212.0]]}
+{"t":1776986422.21214,"e":[[1,0,0.98,462.0]]}
+{"t":1776986437.380849,"e":[[1,0,0.98,212.0]]}
+{"t":1776986439.423061,"e":[[1,0,0.98,462.0]]}
+{"t":1776986469.807368,"e":[[1,0,0.98,212.0]]}
+{"t":1776986472.854091,"e":[[1,0,0.98,462.0]]}
+{"t":1776986494.109504,"e":[[1,0,0.98,212.0]]}
+{"t":1776986496.1457589,"e":[[1,0,0.98,462.0]]}
+{"t":1776986534.6683981,"e":[[1,0,0.98,212.0]]}
+{"t":1776986537.7171562,"e":[[1,0,0.98,462.0]]}
+{"t":1776986573.241257,"e":[[1,0,0.98,212.0]]}
+{"t":1776986574.2613492,"e":[[1,0,0.98,462.0]]}
+{"t":1776986579.318312,"e":[[1,0,0.98,212.0]]}
+{"t":1776986581.3651452,"e":[[1,0,0.98,462.0]]}
+{"t":1776986659.255121,"e":[[1,0,0.98,212.0]]}
+{"t":1776986661.2968,"e":[[1,0,0.98,462.0]]}
+{"t":1776986680.548555,"e":[[1,0,0.98,212.0]]}
+{"t":1776986682.5754209,"e":[[1,0,0.98,462.0],[1,0,0.62,15.0]]}
+{"t":1776986705.846477,"e":[[1,0,0.98,212.0]]}
+{"t":1776986708.8906822,"e":[[1,0,0.98,462.0]]}
+{"t":1776986729.172899,"e":[[1,0,0.98,212.0]]}
+{"t":1776986733.2222269,"e":[[1,0,0.98,462.0]]}
+{"t":1776986832.4536839,"e":[[1,0,0.98,212.0]]}
+{"t":1776986837.5276139,"e":[[1,0,0.98,462.0]]}
+{"t":1776986869.923723,"e":[[1,0,0.98,212.0]]}
+{"t":1776986873.021698,"e":[[1,0,0.98,462.0]]}
+{"t":1776986886.168145,"e":[[1,0,0.98,212.0]]}
+{"t":1776986889.2194529,"e":[[1,0,0.98,462.0]]}
+{"t":1776986915.520103,"e":[[1,0,0.98,212.0]]}
+{"t":1776986919.5786638,"e":[[1,0,0.98,462.0]]}
+{"t":1776986942.903061,"e":[[1,0,0.98,212.0]]}
+{"t":1776986946.9656582,"e":[[1,0,0.98,462.0]]}
+{"t":1776986947.983878,"e":[[1,0,0.98,212.0]]}
+{"t":1776986952.033379,"e":[[1,0,0.98,462.0]]}
+{"t":1776986964.188865,"e":[[1,0,0.98,212.0]]}
+{"t":1776986966.217751,"e":[[1,0,0.98,462.0]]}
+{"t":1776986970.258007,"e":[[1,0,0.98,212.0]]}
+{"t":1776986971.275799,"e":[[1,0,0.98,462.0]]}
+{"t":1776986979.398657,"e":[[1,0,0.98,212.0]]}
+{"t":1776986982.427562,"e":[[1,0,0.98,462.0]]}
+{"t":1776986996.63327,"e":[[1,0,0.98,212.0]]}
+{"t":1776986997.66156,"e":[[1,0,0.98,462.0]]}
+{"t":1776987079.743087,"e":[[1,0,0.98,212.0]]}
+{"t":1776987080.771084,"e":[[1,0,0.98,462.0]]}
+{"t":1776987127.571431,"e":[[1,0,0.98,212.0]]}
+{"t":1776987128.5982761,"e":[[1,0,0.98,462.0]]}
+{"t":1776987131.655811,"e":[[1,0,0.98,212.0]]}
+{"t":1776987135.711443,"e":[[1,0,0.98,462.0]]}
+{"t":1776987144.8593578,"e":[[1,0,0.98,212.0]]}
+{"t":1776987148.931984,"e":[[1,0,0.98,462.0]]}
+{"t":1776987208.6758132,"e":[[1,0,0.98,212.0]]}
+{"t":1776987211.718431,"e":[[1,0,0.98,462.0]]}
+{"t":1776987268.385867,"e":[[1,0,0.98,212.0]]}
+{"t":1776987271.432161,"e":[[1,0,0.98,462.0]]}
+{"t":1776987307.884866,"e":[[1,0,0.98,212.0]]}
+{"t":1776987309.920022,"e":[[1,0,0.98,462.0]]}
+{"t":1776987317.0173628,"e":[[1,0,0.98,212.0]]}
+{"t":1776987318.03879,"e":[[1,0,0.98,462.0]]}
+{"t":1776987354.473679,"e":[[1,0,0.99,1350.0200000000004]]}
+{"t":1776987362.556312,"e":[[1,0,0.98,212.0]]}
+{"t":1776987366.622816,"e":[[1,0,0.98,462.0]]}
+{"t":1776987388.8948748,"e":[[1,0,0.98,212.0]]}
+{"t":1776987392.957681,"e":[[1,0,0.98,462.0]]}
+{"t":1776987480.037149,"e":[[1,0,0.98,212.0]]}
+{"t":1776987481.0704799,"e":[[1,0,0.98,462.0]]}
+{"t":1776987509.499563,"e":[[1,0,0.98,212.0]]}
+{"t":1776987513.572844,"e":[[1,0,0.98,462.0]]}
+{"t":1776987531.878761,"e":[[1,0,0.98,212.0]]}
+{"t":1776987532.89665,"e":[[1,0,0.98,462.0]]}
+{"t":1776987546.0651488,"e":[[1,0,0.98,212.0]]}
+{"t":1776987549.11323,"e":[[1,0,0.98,462.0]]}
+{"t":1776987565.324453,"e":[[1,0,0.98,212.0]]}
+{"t":1776987568.358059,"e":[[1,0,0.98,462.0]]}
+{"t":1776987570.385914,"e":[[1,0,0.98,212.0]]}
+{"t":1776987571.411482,"e":[[1,0,0.98,462.0]]}
+{"t":1776987577.4838452,"e":[[1,0,0.98,212.0]]}
+{"t":1776987580.526141,"e":[[1,0,0.98,462.0]]}
+{"t":1776987586.6072462,"e":[[1,0,0.98,212.0]]}
+{"t":1776987587.619329,"e":[[1,0,0.98,462.0]]}
+{"t":1776987593.725282,"e":[[1,0,0.98,212.0]]}
+{"t":1776987594.758166,"e":[[1,0,0.98,462.0]]}
+{"t":1776987620.079356,"e":[[1,0,0.98,212.0]]}
+{"t":1776987622.1203682,"e":[[1,0,0.98,462.0]]}
+{"t":1776987647.358795,"e":[[1,0,0.98,212.0]]}
+{"t":1776987648.369152,"e":[[1,0,0.98,462.0]]}
+{"t":1776987655.4332852,"e":[[1,0,0.98,212.0]]}

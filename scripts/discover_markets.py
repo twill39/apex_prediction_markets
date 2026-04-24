@@ -16,7 +16,16 @@ from src.discovery import (
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Discover markets suitable for market making (high spread, decent liquidity)."
+        description="Discover markets suitable for market making (high spread, decent liquidity).",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Kalshi tips:
+  Filters are ANDed: a market must pass BOTH min spread and min 24h volume (when set).
+  --min-volume-24h-kalshi is in CONTRACTS (Kalshi volume_24h_fp), not dollars.
+  Tight spreads often go with high volume; use --min-spread-pct 0 to debug volume-only.
+  Without --max-kalshi-pages, discovery may paginate through all open markets (slow if few
+  markets match). Cap pages to fail fast, e.g. --max-kalshi-pages 50.
+""",
     )
     parser.add_argument(
         "source",
@@ -29,7 +38,7 @@ def main():
         "--min-spread-pct",
         type=float,
         default=0.005,
-        help="Min spread as decimal (e.g. 0.01 = 1%%). Default 0.005.",
+        help="Min (ask-bid)/mid as decimal; e.g. 0.01=1%%, 0=disable spread filter. Default 0.005.",
     )
     parser.add_argument(
         "--min-liquidity",
@@ -41,7 +50,7 @@ def main():
         "--min-volume-24h-kalshi",
         type=float,
         default=0,
-        help="Min 24h volume for Kalshi (default 0).",
+        help="Min Kalshi 24h volume in contracts (API volume_24h_fp), not dollars (default 0).",
     )
     parser.add_argument(
         "--max-results",
@@ -52,8 +61,15 @@ def main():
     parser.add_argument(
         "--kalshi-base",
         type=str,
-        default="https://api.calendar.kalshi.com/trade-api/v2",
+        default="https://api.elections.kalshi.com/trade-api/v2",
         help="Kalshi API base URL.",
+    )
+    parser.add_argument(
+        "--max-kalshi-pages",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Kalshi only: stop after N GET /markets pages (~100 markets each). Omit = scan until cursor ends.",
     )
     parser.add_argument(
         "--ids-only",
@@ -74,6 +90,7 @@ def main():
             min_spread_pct=args.min_spread_pct,
             min_volume_24h=args.min_volume_24h_kalshi,
             max_results=args.max_results,
+            max_pages=args.max_kalshi_pages,
         )
     else:
         markets = discover_markets_for_making(
@@ -83,6 +100,7 @@ def main():
             max_poly=args.max_results,
             max_kalshi=args.max_results,
             kalshi_base_url=args.kalshi_base,
+            kalshi_max_pages=args.max_kalshi_pages,
         )
 
     if not markets:

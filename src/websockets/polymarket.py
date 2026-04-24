@@ -150,7 +150,7 @@ class PolymarketWebSocket(BaseWebSocketManager):
                 return self._parse_market_update(data)
             
             # Status/error messages
-            elif msg_type in ["status", "error", "auth_success"]:
+            elif event_type in ["status", "error", "auth_success"]:
                 self.logger.debug(f"Status message: {data}")
                 return None
             

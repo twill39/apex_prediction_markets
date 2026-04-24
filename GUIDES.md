@@ -13,6 +13,7 @@ Before running any strategy, ensure you have:
 ## Strategy 1: Copy Trading
 
 ### Overview
+
 The Copy Trading strategy identifies profitable traders on Polymarket and automatically replicates their trades on both Kalshi and Polymarket.
 
 ### Running in Paper Trading Mode
@@ -22,6 +23,7 @@ python scripts/run_strategy.py --strategy copy_trading --mode paper
 ```
 
 **What to expect:**
+
 - The strategy will connect to both Kalshi and Polymarket WebSocket feeds
 - It will start tracking trader activity and calculating performance metrics
 - When profitable traders make trades, the strategy will generate signals to copy them
@@ -37,6 +39,7 @@ python scripts/run_strategy.py --strategy copy_trading --mode paper
   - Sharpe ratio
 
 **Expected Output:**
+
 ```
 INFO - Starting copy_trading strategy in paper mode
 INFO - Initializing copy trading strategy
@@ -60,6 +63,7 @@ python scripts/run_strategy.py --strategy copy_trading --mode historical --data-
 ```
 
 **What to expect:**
+
 - The strategy will load historical market data from the specified file
 - It will replay events chronologically
 - Copy signals will be generated based on historical trader activity
@@ -73,6 +77,7 @@ python scripts/run_strategy.py --strategy copy_trading --mode historical --data-
 ## Strategy 2: Market Making
 
 ### Overview
+
 The Market Making strategy identifies niche markets with high spreads and provides liquidity by placing limit orders on both sides of the book.
 
 ### Running in Paper Trading Mode
@@ -82,6 +87,7 @@ python scripts/run_strategy.py --strategy market_making --mode paper
 ```
 
 **What to expect:**
+
 - The strategy will connect to WebSocket feeds and monitor order books
 - It will identify markets suitable for market making based on:
   - Spread size (within configured max spread)
@@ -99,6 +105,7 @@ python scripts/run_strategy.py --strategy market_making --mode paper
   - Inventory management
 
 **Expected Output:**
+
 ```
 INFO - Starting market_making strategy in paper mode
 INFO - Initializing market making strategy
@@ -123,6 +130,7 @@ python scripts/run_strategy.py --strategy market_making --mode historical --data
 ```
 
 **What to expect:**
+
 - Historical order book data will be replayed
 - The strategy will identify markets and place quotes
 - Performance will show how market making would have worked historically
@@ -132,6 +140,7 @@ python scripts/run_strategy.py --strategy market_making --mode historical --data
 ## Strategy 3: Alt Data Trading
 
 ### Overview
+
 The Alt Data strategy uses alternative data sources (Twitter, satellite imagery, etc.) to build fair value models and trade when market prices deviate from predicted values.
 
 ### Running in Paper Trading Mode
@@ -141,6 +150,7 @@ python scripts/run_strategy.py --strategy alt_data --mode paper
 ```
 
 **What to expect:**
+
 - The strategy will connect to WebSocket feeds and Twitter API (if configured)
 - It will collect alternative data for markets based on keywords
 - Fair value models will be built/updated using the alt data
@@ -157,6 +167,7 @@ python scripts/run_strategy.py --strategy alt_data --mode paper
   - Returns from alt data signals
 
 **Expected Output:**
+
 ```
 INFO - Starting alt_data strategy in paper mode
 INFO - Initializing alt data strategy
@@ -175,6 +186,7 @@ Total P&L: $156.30
 ```
 
 **Configuration Requirements:**
+
 - Set `TWITTER_BEARER_TOKEN` in `.env` for Twitter data collection
 - Strategy will work without Twitter but with limited alt data sources
 
@@ -185,6 +197,7 @@ python scripts/run_strategy.py --strategy alt_data --mode historical --data-path
 ```
 
 **What to expect:**
+
 - Historical data will be replayed
 - Alt data collection will be simulated based on historical market events
 - Fair value models will be tested against historical outcomes
@@ -288,12 +301,14 @@ python scripts/collect_historical.py --platform kalshi --markets MARKET_ID_1 MAR
 ```
 
 **Parameters:**
+
 - `--platform`: Either `kalshi` or `polymarket`
 - `--markets`: Space-separated list of market IDs to collect
 - `--duration`: Collection duration in seconds (default: 60)
 - `--output`: Output file path
 
 **What to expect:**
+
 - WebSocket connection to the platform
 - Subscription to specified markets
 - Collection of order book updates and trades for the duration
@@ -325,10 +340,12 @@ python scripts/collect_historical.py --platform polymarket --markets MARKET_ID_1
 ## Common Issues and Troubleshooting
 
 ### WebSocket Connection Failures
+
 - **Issue:** "Failed to connect" errors
 - **Solution:** Check your API credentials in `.env` and ensure you have network access
 
 ### No Signals Generated
+
 - **Issue:** Strategy runs but generates no trading signals
 - **Solution:** 
   - For copy trading: Ensure there are active traders being tracked
@@ -336,10 +353,12 @@ python scripts/collect_historical.py --platform polymarket --markets MARKET_ID_1
   - For alt data: Verify Twitter API credentials if using Twitter data
 
 ### Database Errors
+
 - **Issue:** SQLite database errors
 - **Solution:** Ensure the `data/` directory exists and is writable
 
 ### Missing Dependencies
+
 - **Issue:** Import errors
 - **Solution:** Run `pip install -r requirements.txt` to install all dependencies
 
@@ -366,3 +385,4 @@ All strategies output the following metrics:
 3. Analyze performance metrics to optimize strategy parameters
 4. Adjust configuration in `.env` for strategy-specific settings
 5. Monitor logs for detailed execution information
+

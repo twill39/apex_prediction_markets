@@ -11,7 +11,7 @@ from ._http import get_json
 GAMMA_EVENTS_URL = "https://gamma-api.polymarket.com/events"
 
 # Kalshi (public markets endpoint - no auth required for GET /markets)
-DEFAULT_KALSHI_BASE = "https://api.calendar.kalshi.com/trade-api/v2"
+DEFAULT_KALSHI_BASE = "https://api.elections.kalshi.com/trade-api/v2"
 
 
 def _parse_float(v: Any) -> Optional[float]:
@@ -116,6 +116,7 @@ def discover_kalshi_markets(
     min_spread_pct: float = 0,
     min_volume_24h: float = 0,
     max_results: int = 100,
+    max_pages: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
     """
     Fetch Kalshi open markets and return those with sufficient spread and volume.
@@ -123,8 +124,9 @@ def discover_kalshi_markets(
     Args:
         base_url: Kalshi API base URL (e.g. from credentials).
         min_spread_pct: Minimum spread as fraction of mid (e.g. 0.01 = 1%).
-        min_volume_24h: Minimum 24h volume.
+        min_volume_24h: Minimum 24h volume in contracts (Kalshi ``volume_24h_fp``), not dollars.
         max_results: Max number of markets to return.
+        max_pages: Max GET /markets pages to fetch (100 markets per page). None = until cursor ends.
 
     Returns:
         List of dicts with: platform='kalshi', market_id (ticker), spread_pct, volume_24h, title.
@@ -132,8 +134,12 @@ def discover_kalshi_markets(
     results: List[Dict[str, Any]] = []
     cursor: Optional[str] = None
     limit = 100
+    page_num = 0
 
     while len(results) < max_results:
+        page_num += 1
+        if max_pages is not None and page_num > max_pages:
+            break
         url = f"{base_url.rstrip('/')}/markets?status=open&limit={limit}"
         if cursor:
             url += f"&cursor={urllib.parse.quote(cursor)}"
@@ -151,7 +157,10 @@ def discover_kalshi_markets(
                 continue
             yes_bid = _parse_float(m.get("yes_bid_dollars") or m.get("yes_bid"))
             yes_ask = _parse_float(m.get("yes_ask_dollars") or m.get("yes_ask"))
-            vol_24 = _parse_float(m.get("volume_24h") or m.get("volume_24h_fp")) or 0
+            vol_24 = _parse_float(m.get("volume_24h_fp"))
+            if vol_24 is None:
+                vol_24 = _parse_float(m.get("volume_24h"))
+            vol_24 = vol_24 or 0
 
             spread_pct = None
             if yes_bid is not None and yes_ask is not None and yes_bid >= 0 and yes_ask >= 0:
@@ -185,6 +194,7 @@ def discover_markets_for_making(
     max_poly: int = 50,
     max_kalshi: int = 50,
     kalshi_base_url: str = DEFAULT_KALSHI_BASE,
+    kalshi_max_pages: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
     """
     Return combined list of Polymarket + Kalshi markets suitable for market making.
@@ -200,5 +210,6 @@ def discover_markets_for_making(
         min_spread_pct=min_spread_pct,
         min_volume_24h=min_volume_24h_kalshi,
         max_results=max_kalshi,
+        max_pages=kalshi_max_pages,
     )
     return poly + kalshi

@@ -5,7 +5,7 @@ import json
 import base64
 import time
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 
 from cryptography.hazmat.primitives import serialization, hashes
@@ -372,25 +372,59 @@ class KalshiWebSocket(BaseWebSocketManager):
         )
     
     def _parse_trade(self, data: Dict[str, Any]) -> WebSocketEvent:
-        """Parse trade update"""
-        market_id = data.get("market_id") or data.get("channel", "").split(".")[-1]
-        
+        """Parse Kalshi public trade (type trade). Payload is under `msg` per Kalshi WS docs."""
+        msg = data.get("msg") or data
+        market_id = (msg.get("market_ticker") or msg.get("market_id") or data.get("market_id") or "").strip()
+        trade_id = str(msg.get("trade_id") or "")
+        yes_px = msg.get("yes_price_dollars")
+        no_px = msg.get("no_price_dollars")
+        try:
+            price = float(yes_px) if yes_px is not None else float(msg.get("price", 0) or 0)
+        except (TypeError, ValueError):
+            price = 0.0
+        try:
+            size = float(msg.get("count_fp") or msg.get("count") or data.get("size") or 0)
+        except (TypeError, ValueError):
+            size = 0.0
+        ts_ms = msg.get("ts_ms")
+        ts_sec = msg.get("ts")
+        if ts_ms is not None:
+            try:
+                ts = datetime.fromtimestamp(int(ts_ms) / 1000.0, tz=timezone.utc)
+            except (TypeError, ValueError, OSError):
+                ts = datetime.now(timezone.utc)
+        elif ts_sec is not None:
+            try:
+                ts = datetime.fromtimestamp(int(ts_sec), tz=timezone.utc)
+            except (TypeError, ValueError, OSError):
+                ts = datetime.now(timezone.utc)
+        else:
+            ts = datetime.now(timezone.utc)
+        taker = (msg.get("taker_side") or "").strip().lower()
+        # Approximate: taker lifted yes contracts vs no side of the book.
+        side = OrderSide.BUY if taker == "yes" else OrderSide.SELL if taker == "no" else OrderSide.BUY
+
         trade = Trade(
-            trade_id=data.get("trade_id", ""),
+            trade_id=trade_id,
             market_id=market_id,
             platform=Platform.KALSHI,
-            side=OrderSide.BUY if data.get("side") == "buy" else OrderSide.SELL,
-            price=float(data.get("price", 0)),
-            size=float(data.get("size", 0)),
-            timestamp=datetime.fromisoformat(data.get("timestamp", datetime.utcnow().isoformat())),
-            fees=float(data.get("fees", 0))
+            side=side,
+            price=price,
+            size=size,
+            timestamp=ts,
+            fees=0.0,
+            metadata={
+                "taker_side": taker or None,
+                "yes_price_dollars": yes_px,
+                "no_price_dollars": no_px,
+            },
         )
-        
+
         return WebSocketEvent(
             event_type=WebSocketEventType.TRADE,
-            data={"trade": trade.model_dump()},
-            timestamp=datetime.utcnow(),
-            market_id=market_id
+            data={"trade": trade.model_dump(), "kalshi_msg": msg},
+            timestamp=datetime.now(timezone.utc),
+            market_id=market_id,
         )
     
     def _parse_market_update(self, data: Dict[str, Any]) -> WebSocketEvent:

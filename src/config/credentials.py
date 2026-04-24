@@ -14,11 +14,11 @@ class KalshiCredentials(BaseModel):
     api_key: str = Field(..., description="Kalshi API key ID")
     private_key_path: str = Field(..., description="Path to .pem private key file")
     base_url: str = Field(
-        default="https://api.calendar.kalshi.com/trade-api/v2",
+        default="https://api.elections.kalshi.com/trade-api/v2",
         description="Kalshi API base URL"
     )
     ws_url: str = Field(
-        default="wss://api.calendar.kalshi.com/trade-api/ws/v2",
+        default="wss://api.elections.kalshi.com/trade-api/ws/v2",
         description="Kalshi WebSocket URL"
     )
 
@@ -49,7 +49,7 @@ class Credentials(BaseModel):
         
         kalshi = None
         if kalshi_key and kalshi_pem_path:
-            base_url = os.getenv("KALSHI_BASE_URL", "https://api.calendar.kalshi.com/trade-api/v2")
+            base_url = os.getenv("KALSHI_BASE_URL", "https://api.elections.kalshi.com/trade-api/v2")
             # Derive WebSocket URL from base URL if not set
             ws_url = os.getenv("KALSHI_WS_URL")
             if not ws_url and base_url.startswith("https://"):
@@ -59,7 +59,7 @@ class Credentials(BaseModel):
                 else:
                     ws_url = ws_url + "/ws/v2"
             if not ws_url:
-                ws_url = "wss://api.calendar.kalshi.com/trade-api/ws/v2"
+                ws_url = "wss://api.elections.kalshi.com/trade-api/ws/v2"
             kalshi = KalshiCredentials(
                 api_key=kalshi_key,
                 private_key_path=kalshi_pem_path,

@@ -100,7 +100,7 @@ Per market:
 
 - **snapshot.json** – Full orderbook at subscription time: `market_id`, `platform`, `timestamp`, `bids`, `asks` (each a list of `[price, size]`).
 - **frames.jsonl** (default, `--mode snapshots`) – One JSON object per line: `{"t": unix_ts, "bids": [[price, size], ...], "asks": [[price, size], ...]}`. This is the full book every `interval` seconds; simpler to work with and compresses well.
-- **deltas.jsonl** (`--mode deltas`) – One JSON object per line: `{"t": unix_ts, "events": [{"op": "set"|"delete", "side": "bid"|"ask", "price": float, "size"?: float}, ...]}`. Only **changes** each second are stored, so disk usage stays low on quieter or deeper markets.
+- **deltas.jsonl** (`--mode deltas`) – One compact JSON object per line: `{"t":unix_ts,"e":[[op,side,price],...]}`. Each event is either `[0,side,price]` (**delete**) or `[1,side,price,size]` (**set**): `op` 0=delete, 1=set; `side` 0=bid, 1=ask. No spaces in JSON. Older captures used `{"t","events"}` with string `op`/`side`; `scripts/reconstruct_hft_orderbook.py` replays both.
 
 ---
 
