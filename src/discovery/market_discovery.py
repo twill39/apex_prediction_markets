@@ -6,12 +6,13 @@ import urllib.request
 from typing import Any, Dict, List, Optional
 
 from ._http import get_json
+from src.kalshi_client import KalshiClient
 
 # Polymarket Gamma
 GAMMA_EVENTS_URL = "https://gamma-api.polymarket.com/events"
 
 # Kalshi (public markets endpoint - no auth required for GET /markets)
-DEFAULT_KALSHI_BASE = "https://api.calendar.kalshi.com/trade-api/v2"
+DEFAULT_KALSHI_BASE = "https://api.elections.kalshi.com/trade-api/v2"
 
 
 def _parse_float(v: Any) -> Optional[float]:
@@ -114,8 +115,10 @@ def discover_polymarket_markets(
 def discover_kalshi_markets(
     base_url: str = DEFAULT_KALSHI_BASE,
     min_spread_pct: float = 0,
+    max_spread_pct: float = 0,
     min_volume_24h: float = 0,
     max_results: int = 100,
+    series_ticker: str = None,
 ) -> List[Dict[str, Any]]:
     """
     Fetch Kalshi open markets and return those with sufficient spread and volume.
@@ -129,29 +132,41 @@ def discover_kalshi_markets(
     Returns:
         List of dicts with: platform='kalshi', market_id (ticker), spread_pct, volume_24h, title.
     """
+    client = KalshiClient()
     results: List[Dict[str, Any]] = []
     cursor: Optional[str] = None
     limit = 100
+    max_pages = max_results
+    page = 0
 
-    while len(results) < max_results:
-        url = f"{base_url.rstrip('/')}/markets?status=open&limit={limit}"
-        if cursor:
-            url += f"&cursor={urllib.parse.quote(cursor)}"
-        data = get_json(url)
-        if not isinstance(data, dict):
-            break
+    while len(results) < max_results and page < max_pages:
+        page += 1
+        print(f"fetching page, cursor={cursor}, results so far={len(results)}")
+        
+        data = client.get_markets(
+            limit=limit, 
+            cursor=cursor,
+            series_ticker=series_ticker
+        ) or []
         markets = data.get("markets") or []
         cursor = data.get("cursor")
+        print(f"got {len(markets)} markets")
 
         for m in markets:
             if len(results) >= max_results:
                 break
             ticker = m.get("ticker")
+
             if not ticker:
                 continue
+            # skip MVE combo markets
+            if ticker.upper().startswith("KXMVE"):
+                continue
+
             yes_bid = _parse_float(m.get("yes_bid_dollars") or m.get("yes_bid"))
             yes_ask = _parse_float(m.get("yes_ask_dollars") or m.get("yes_ask"))
             vol_24 = _parse_float(m.get("volume_24h") or m.get("volume_24h_fp")) or 0
+            
 
             spread_pct = None
             if yes_bid is not None and yes_ask is not None and yes_bid >= 0 and yes_ask >= 0:
@@ -162,6 +177,8 @@ def discover_kalshi_markets(
             if min_volume_24h and vol_24 < min_volume_24h:
                 continue
             if min_spread_pct > 0 and (spread_pct is None or spread_pct < min_spread_pct):
+                continue
+            if max_spread_pct and spread_pct and spread_pct > max_spread_pct:
                 continue
 
             results.append({

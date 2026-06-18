@@ -79,6 +79,23 @@ def load_orders(base_path: str, ticker: str) -> Optional[List[Dict[str, Any]]]:
         return None
     with open(p) as f:
         return json.load(f)
+    
+def load_live_market(base_path: str, ticker: str) -> Optional[Dict[str, Any]]:
+    """Load market.json. Returns None if file does not exist."""
+    p = get_live_market_path(base_path, ticker)
+    if not p.is_file():
+        return None
+    with open(p) as f:
+        return json.load(f)
+
+
+def load_live_orders(base_path: str, ticker: str) -> Optional[List[Dict[str, Any]]]:
+    """Load orders.json. Returns None if file does not exist."""
+    p = get_live_candlesticks_path(base_path, ticker)
+    if not p.is_file():
+        return None
+    with open(p) as f:
+        return json.load(f)
 
 
 def save_candlesticks(base_path: str, ticker: str, data: Dict[str, Any]) -> Path:

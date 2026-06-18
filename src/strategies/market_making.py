@@ -31,6 +31,12 @@ class MarketMakingStrategy(BaseStrategy):
         self.settings = get_settings()
         self.logger = get_logger("MarketMakingStrategy")
         self.storage = get_storage()
+
+        # ADDED FIELDS
+        self.current_quotes: Dict[str, Dict[str, float]] = {}  # market_id -> {bid, ask}
+        self.last_quote_update: Dict[str, datetime] = {}  # market_id -> last update time
+        self.quote_update_interval = timedelta(seconds=1)  # min time between quote updates
+        self.quote_reprice_threshold = 0.005
         
         # Active market making markets
         self.active_markets: Dict[str, Dict[str, any]] = {}  # market_id -> market data
@@ -51,6 +57,11 @@ class MarketMakingStrategy(BaseStrategy):
     async def initialize(self):
         """Initialize the strategy"""
         self.logger.info("Initializing market making strategy")
+
+        # If using historical data, skip the websockets
+        if getattr(self, "mode", None) == "historical":
+            self.logger.info("Historical mode — skipping WebSocket init and market discovery")
+            return
         
         # Initialize WebSocket clients
         try:
@@ -103,6 +114,13 @@ class MarketMakingStrategy(BaseStrategy):
     def get_discovered_market_ids(self) -> List[str]:
         """Return market IDs discovered for market making (for simulator subscription)."""
         return list(self.discovered_market_ids)
+
+    def _get_reference_time(self, market_id: str) -> datetime:
+        """Use event time in historical mode so replay timing matches the data."""
+        orderbook = self.orderbooks.get(market_id)
+        if getattr(self, "mode", None) == "historical" and orderbook is not None:
+            return orderbook.timestamp
+        return datetime.utcnow()
     
     def _calculate_fair_value(self, market_id: str, orderbook: OrderBook) -> Optional[float]:
         """Calculate fair value for a market"""
@@ -180,9 +198,10 @@ class MarketMakingStrategy(BaseStrategy):
     async def on_orderbook_update(self, orderbook: OrderBook):
         """Handle order book update"""
         market_id = orderbook.market_id
-        
+
         # Store order book
         self.orderbooks[market_id] = orderbook
+        
         
         # Calculate fair value
         fair_value = self._calculate_fair_value(market_id, orderbook)
@@ -194,7 +213,7 @@ class MarketMakingStrategy(BaseStrategy):
             if self._is_market_suitable(market_id, orderbook):
                 self.active_markets[market_id] = {
                     "platform": orderbook.platform,
-                    "started_at": datetime.utcnow()
+                    "started_at": orderbook.timestamp if getattr(self, "mode", None) == "historical" else datetime.utcnow()
                 }
                 self.logger.info(f"Started market making on {market_id}")
         
@@ -230,59 +249,68 @@ class MarketMakingStrategy(BaseStrategy):
         pass
     
     async def generate_signals(self) -> List[StrategySignal]:
-        """Generate trading signals for market making"""
         if self.state != StrategyState.RUNNING:
             return []
-        
+
         signals = []
-        
-        # Generate signals to maintain quotes on active markets
         for market_id, market_data in self.active_markets.items():
             orderbook = self.orderbooks.get(market_id)
             if not orderbook:
                 continue
-            
+            now = self._get_reference_time(market_id)
+
             fair_value = self.fair_values.get(market_id)
             if not fair_value:
                 continue
-            
-            platform = market_data.get("platform", orderbook.platform)
-            bid_price = market_data.get("bid_price")
-            ask_price = market_data.get("ask_price")
-            
-            if not bid_price or not ask_price:
+
+            # Check time throttle
+            last_update = self.last_quote_update.get(market_id)
+            if last_update and (now - last_update) < self.quote_update_interval:
                 continue
-            
-            # Check current best bid/ask
-            best_bid = orderbook.get_best_bid()
-            best_ask = orderbook.get_best_ask()
-            
-            # Place bid if our bid is better or missing
-            if best_bid is None or bid_price > best_bid:
-                signals.append(StrategySignal(
-                    market_id=market_id,
-                    platform=platform,
-                    side="buy",
-                    size=self.settings.market_making.max_position / 10,  # Small size
-                    price=bid_price,
-                    order_type="limit",
-                    confidence=0.8,
-                    reason=f"Market making bid at {bid_price:.4f}",
-                    timestamp=datetime.utcnow()
-                ))
-            
-            # Place ask if our ask is better or missing
-            if best_ask is None or ask_price < best_ask:
-                signals.append(StrategySignal(
-                    market_id=market_id,
-                    platform=platform,
-                    side="sell",
-                    size=self.settings.market_making.max_position / 10,  # Small size
-                    price=ask_price,
-                    order_type="limit",
-                    confidence=0.8,
-                    reason=f"Market making ask at {ask_price:.4f}",
-                    timestamp=datetime.utcnow()
-                ))
-        
+
+            # Check if fair value has moved enough to warrant repricing
+            current = self.current_quotes.get(market_id, {})
+            current_bid = current.get("bid")
+            current_ask = current.get("ask")
+
+            if current_bid and current_ask:
+                current_mid = (current_bid + current_ask) / 2
+                price_move = abs(fair_value - current_mid) / current_mid
+                if price_move < self.quote_reprice_threshold:
+                    continue  # fair value hasn't moved enough, skip
+
+            # Calculate new quotes
+            quote_spread = self.settings.market_making.quote_spread if hasattr(self.settings.market_making, 'quote_spread') else 0.02
+            bid_price = max(0.01, fair_value - quote_spread / 2)
+            ask_price = min(0.99, fair_value + quote_spread / 2)
+
+            platform = market_data.get("platform", orderbook.platform)
+
+            signals.append(StrategySignal(
+                market_id=market_id,
+                platform=platform,
+                side="buy",
+                size=self.settings.market_making.max_position / 10,
+                price=bid_price,
+                order_type="limit",
+                confidence=0.8,
+                reason=f"MM bid reprice to {bid_price:.4f} (fv={fair_value:.4f})",
+                timestamp=now
+            ))
+            signals.append(StrategySignal(
+                market_id=market_id,
+                platform=platform,
+                side="sell",
+                size=self.settings.market_making.max_position / 10,
+                price=ask_price,
+                order_type="limit",
+                confidence=0.8,
+                reason=f"MM ask reprice to {ask_price:.4f} (fv={fair_value:.4f})",
+                timestamp=now
+            ))
+
+            # Update tracking
+            self.current_quotes[market_id] = {"bid": bid_price, "ask": ask_price}
+            self.last_quote_update[market_id] = now
+
         return signals

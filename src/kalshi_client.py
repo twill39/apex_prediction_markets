@@ -108,6 +108,7 @@ class KalshiClient:
     def get_historical_markets_all_pages(
         self,
         limit: int = 1000,
+        max_markets: Optional[int] = None,
         event_ticker: Optional[str] = None,
         tickers: Optional[str] = None,
         mve_filter: Optional[str] = None,
@@ -116,8 +117,17 @@ class KalshiClient:
         markets = []
         cursor = None
         while True:
+            #if we're close to the cap, only request what we need
+            if max_markets:
+                remaining = max_markets - len(markets)
+                if remaining <= 0:
+                    break
+                page_limit = min(limit, remaining)
+            else:
+                page_limit = limit
+            
             data = self.get_historical_markets(
-                limit=limit,
+                limit=page_limit,
                 cursor=cursor,
                 event_ticker=event_ticker,
                 tickers=tickers,
@@ -138,7 +148,7 @@ class KalshiClient:
 
     def get_historical_orders(self, ticker: str, max_ts: Optional[int] = None, limit: int = 200, cursor: Optional[str] = None) -> Dict[str, Any]:
         """GET /historical/orders. max_ts: Unix timestamp (ms) - return orders before this time. limit: 1-200. cursor: pagination."""
-        path = "/historical/orders"
+        path = "/historical/trades"
         params = {"ticker": ticker, "limit": limit}
         if max_ts is not None:
             params["max_ts"] = max_ts

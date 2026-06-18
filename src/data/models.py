@@ -4,6 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
+import numpy as np
 
 
 class Platform(str, Enum):
@@ -38,6 +39,154 @@ class PositionSide(str, Enum):
     """Position side"""
     LONG = "long"
     SHORT = "short"
+
+class PriceObservation(BaseModel):
+    """Single mid price observation with timestamp"""
+    timestamp: datetime = Field(..., description="Observation timestamp")
+    mid_price: float = Field(..., description="Mid price at this timestamp")
+
+class PriceHistory(BaseModel):
+    """Rolling buffer of mid price observations for a single market.
+    
+    Maintains a fixed time window of observations and exposes the
+    series as a numpy array for use in rolling_realized_vol and
+    regime_score calculations.
+    """
+    market_id: str = Field(..., description="Market identifier")
+    window_seconds: int = Field(
+        default=300,
+        description="Rolling window size in seconds (default 5 minutes)"
+    )
+    min_observations: int = Field(
+        default=30,
+        description="Minimum real observations required before vol estimate is trusted"
+    )
+    observations: List[PriceObservation] = Field(
+        default_factory=list,
+        description="Chronological list of mid price observations"
+    )
+ 
+    def add(self, timestamp: datetime, mid_price: float) -> None:
+        """Append a new observation and drop anything outside the rolling window.
+ 
+        Parameters
+        ----------
+        timestamp : datetime
+            Timestamp of the new observation.
+        mid_price : float
+            Mid price computed from best bid and best ask.
+        """
+        self.observations.append(
+            PriceObservation(timestamp=timestamp, mid_price=mid_price)
+        )
+        cutoff = timestamp.timestamp() - self.window_seconds
+        self.observations = [
+            o for o in self.observations
+            if o.timestamp.timestamp() >= cutoff
+        ]
+ 
+    def is_ready(self) -> bool:
+        """Return True if there are enough observations to trust a vol estimate.
+ 
+        Returns
+        -------
+        bool
+            True if observation count meets min_observations threshold.
+        """
+        return len(self.observations) >= self.min_observations
+ 
+    def get_prices(self) -> Optional[np.ndarray]:
+        """Return mid prices as a numpy array ordered oldest to newest.
+ 
+        Returns
+        -------
+        np.ndarray or None
+            Array of mid prices, or None if not enough observations.
+        """
+        if not self.is_ready():
+            return None
+        return np.array([o.mid_price for o in self.observations])
+ 
+    def get_timestamps(self) -> Optional[np.ndarray]:
+        """Return unix timestamps as a numpy array ordered oldest to newest.
+ 
+        Returns
+        -------
+        np.ndarray or None
+            Array of unix timestamps, or None if not enough observations.
+        """
+        if not self.is_ready():
+            return None
+        return np.array([o.timestamp.timestamp() for o in self.observations])
+ 
+    def latest_mid(self) -> Optional[float]:
+        """Return the most recent mid price.
+ 
+        Returns
+        -------
+        float or None
+            Most recent mid price, or None if no observations exist.
+        """
+        if not self.observations:
+            return None
+        return self.observations[-1].mid_price
+
+
+class UnderlyingPriceObservation(BaseModel):
+    """Single underlying price observation with timestamp."""
+    timestamp: datetime = Field(..., description="Observation timestamp")
+    symbol: str = Field(..., description="Underlying symbol, for example $SPX")
+    price: float = Field(..., description="Underlying spot price at this timestamp")
+    source: str = Field(default="unknown", description="Source of this observation")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional source fields")
+
+
+class UnderlyingPriceState(BaseModel):
+    """Rolling state container for underlying observations."""
+    symbol: str = Field(..., description="Underlying symbol")
+    window_seconds: int = Field(
+        default=8 * 60 * 60,
+        description="Rolling retention window in seconds",
+    )
+    observations: List[UnderlyingPriceObservation] = Field(
+        default_factory=list,
+        description="Chronological list of observations",
+    )
+
+    def add(
+        self,
+        timestamp: datetime,
+        price: float,
+        source: str = "unknown",
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Append an observation and evict entries outside the rolling window."""
+        self.observations.append(
+            UnderlyingPriceObservation(
+                timestamp=timestamp,
+                symbol=self.symbol,
+                price=price,
+                source=source,
+                metadata=metadata or {},
+            )
+        )
+        cutoff = timestamp.timestamp() - self.window_seconds
+        self.observations = [
+            obs for obs in self.observations if obs.timestamp.timestamp() >= cutoff
+        ]
+
+    def latest(self) -> Optional[UnderlyingPriceObservation]:
+        """Return the latest observation."""
+        if not self.observations:
+            return None
+        return self.observations[-1]
+
+    def latest_price(self) -> Optional[float]:
+        """Return the latest underlying price."""
+        latest_obs = self.latest()
+        if latest_obs is None:
+            return None
+        return latest_obs.price
 
 
 class Market(BaseModel):

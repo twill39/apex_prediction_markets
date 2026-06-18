@@ -73,6 +73,10 @@ class BaseStrategy(ABC):
     async def on_trade(self, trade: Trade):
         """Handle trade event"""
         pass
+
+    async def on_fill(self, trade: Trade):
+        """Handle a fill of this strategy's own order."""
+        return None
     
     @abstractmethod
     async def generate_signals(self) -> List[StrategySignal]:
