@@ -120,6 +120,11 @@ Only needed if you run the **Alt Data** strategy and want Twitter data:
 
 Strategy and simulator options (e.g. `COPY_TRADING_MAX_TRADERS`, `SIMULATOR_SLIPPAGE`) are in `.env.example` with defaults; you can change them in `.env` if you want.
 
+For the A-S market making strategy (`--strategy market_making_as`), tune with:
+- `MARKET_MAKING_AS_GAMMA_BASE`, `MARKET_MAKING_AS_KAPPA`, `MARKET_MAKING_AS_SESSION_HORIZON_SECONDS`
+- `MARKET_MAKING_AS_QUOTE_UPDATE_INTERVAL_SECONDS`, `MARKET_MAKING_AS_QUOTE_REPRICE_THRESHOLD`
+- `MARKET_MAKING_AS_BASE_SIZE_FRACTION`, `MARKET_MAKING_AS_REGIME_SIZE_BETA`, `MARKET_MAKING_AS_INVENTORY_SIZE_ETA`
+
 ### Save and close
 
 Save `.env` and keep it only on your machine. Never commit it or share it.
@@ -147,6 +152,7 @@ Always run commands from the **project root** (`apex_prediction_markets/`), with
 ```bash
 python scripts/run_strategy.py --strategy copy_trading --mode paper
 python scripts/run_strategy.py --strategy market_making --mode paper
+python scripts/run_strategy.py --strategy market_making_as --mode paper
 python scripts/run_strategy.py --strategy alt_data --mode paper
 ```
 

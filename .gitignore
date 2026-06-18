@@ -51,6 +51,8 @@ logs/
 *.csv
 *.json
 *.parquet
+*.jsonl
+*.json
 
 # OS
 .DS_Store
@@ -74,3 +76,6 @@ private_key.pem
 
 roles.md
 report.md
+
+# Images
+*.png

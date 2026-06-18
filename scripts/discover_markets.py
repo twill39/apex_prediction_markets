@@ -32,6 +32,12 @@ def main():
         help="Min spread as decimal (e.g. 0.01 = 1%%). Default 0.005.",
     )
     parser.add_argument(
+        "--max-spread-pct",
+        type=float,
+        default=1.0,
+        help="Max spread as decimal (e.g. 0.01 = 1%%). Default 1.0.",
+    )
+    parser.add_argument(
         "--min-liquidity",
         type=float,
         default=0,
@@ -52,8 +58,14 @@ def main():
     parser.add_argument(
         "--kalshi-base",
         type=str,
-        default="https://api.calendar.kalshi.com/trade-api/v2",
+        default="https://api.elections.kalshi.com/trade-api/v2",
         help="Kalshi API base URL.",
+    )
+    parser.add_argument(
+        "--series-contains",
+        type=str,
+        default=None,
+        help="Comma-separated substrings; keep market if series_ticker contains any",
     )
     parser.add_argument(
         "--ids-only",
@@ -72,8 +84,10 @@ def main():
         markets = discover_kalshi_markets(
             base_url=args.kalshi_base,
             min_spread_pct=args.min_spread_pct,
+            max_spread_pct=args.max_spread_pct,
             min_volume_24h=args.min_volume_24h_kalshi,
             max_results=args.max_results,
+            series_ticker=args.series_contains
         )
     else:
         markets = discover_markets_for_making(

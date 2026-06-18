@@ -4,6 +4,8 @@
 import argparse
 import sys
 from pathlib import Path
+import matplotlib
+import matplotlib.pyplot as plt
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -97,9 +99,7 @@ def run_analysis(
     print(f"Average spread: {metrics['average_spread']}")
 
     if output_plot:
-        import matplotlib
         matplotlib.use("Agg")
-        import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
         ax.plot(times, mid_prices, label="Mid price")
         t_ok = [t for t, b, a in zip(times, best_bids, best_asks) if b is not None and a is not None]
