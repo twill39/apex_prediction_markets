@@ -23,6 +23,20 @@ class KalshiCredentials(BaseModel):
     )
 
 
+class SchwabCredentials(BaseModel):
+    """Charles Schwab API credentials (schwabdev OAuth)."""
+    app_key: str = Field(..., description="Schwab app key (APP_KEY)")
+    app_secret: str = Field(..., description="Schwab app secret (APP_SECRET)")
+    callback_url: Optional[str] = Field(
+        default=None,
+        description="OAuth callback URL (CALLBACK_URL); optional if tokens already exist",
+    )
+    token_path: Optional[str] = Field(
+        default=None,
+        description="Optional path to schwabdev tokens directory or file",
+    )
+
+
 class PolymarketCredentials(BaseModel):
     """Polymarket API credentials.
     Market channel: no auth. User channel: needs api_key + secret + passphrase (from Polymarket SDK).
@@ -40,6 +54,7 @@ class Credentials(BaseModel):
     """All API credentials"""
     kalshi: Optional[KalshiCredentials] = None
     polymarket: Optional[PolymarketCredentials] = None
+    schwab: Optional[SchwabCredentials] = None
 
     @classmethod
     def from_env(cls) -> "Credentials":
@@ -76,8 +91,19 @@ class Credentials(BaseModel):
             passphrase=polymarket_passphrase or None,
             base_url=os.getenv("POLYMARKET_BASE_URL", "https://clob.polymarket.com")
         )
+
+        schwab_key = os.getenv("APP_KEY") or os.getenv("SCHWAB_APP_KEY")
+        schwab_secret = os.getenv("APP_SECRET") or os.getenv("SCHWAB_APP_SECRET")
+        schwab = None
+        if schwab_key and schwab_secret:
+            schwab = SchwabCredentials(
+                app_key=schwab_key,
+                app_secret=schwab_secret,
+                callback_url=os.getenv("CALLBACK_URL") or os.getenv("SCHWAB_CALLBACK_URL"),
+                token_path=os.getenv("SCHWAB_TOKEN_PATH"),
+            )
         
-        return cls(kalshi=kalshi, polymarket=polymarket)
+        return cls(kalshi=kalshi, polymarket=polymarket, schwab=schwab)
 
 
 # Global credentials instance
