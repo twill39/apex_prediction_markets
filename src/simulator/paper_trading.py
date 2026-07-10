@@ -66,6 +66,7 @@ class PaperTradingSimulator(BaseSimulator):
 
         # Pending orders
         self.pending_orders: Dict[str, Order] = {}
+        self._fill_lock = asyncio.Lock()
 
         # Set to True if run() exited early due to WebSocket connection failure
         self.websocket_connection_failed: bool = False
@@ -339,75 +340,109 @@ class PaperTradingSimulator(BaseSimulator):
             await self._fill_order(order, orderbook)
     
     async def _fill_order(self, order: Order, orderbook):
-        """Fill an order"""
-        # Determine execution price
-        if order.order_type == OrderType.MARKET:
-            if order.side == OrderSide.BUY:
-                execution_price = orderbook.get_best_ask() or order.price or 0.5
+        """Fill an order (serialized to avoid duplicate fills / KeyError on pending_orders)."""
+        async with self._fill_lock:
+            order_id = order.order_id
+            from_pending = order.order_type == OrderType.LIMIT
+
+            if from_pending:
+                live = self.pending_orders.get(order_id)
+                if live is None or live.status not in (
+                    OrderStatus.OPEN,
+                    OrderStatus.PARTIALLY_FILLED,
+                ):
+                    return
+                order = live
+
+            # Determine execution price
+            if order.order_type == OrderType.MARKET:
+                if order.side == OrderSide.BUY:
+                    execution_price = orderbook.get_best_ask() or order.price or 0.5
+                else:
+                    execution_price = orderbook.get_best_bid() or order.price or 0.5
             else:
-                execution_price = orderbook.get_best_bid() or order.price or 0.5
-        else:
-            execution_price = order.price
-        
-        # Apply slippage
-        slippage = self.settings.simulator.slippage
-        if order.side == OrderSide.BUY:
-            execution_price *= (1 + slippage)
-        else:
-            execution_price *= (1 - slippage)
+                execution_price = order.price
 
-        fill_sz = self._allowed_fill_size(order.market_id, order.platform, order.side, order.size)
-        if fill_sz <= 0:
-            return
+            # Apply slippage
+            slippage = self.settings.simulator.slippage
+            if order.side == OrderSide.BUY:
+                execution_price *= (1 + slippage)
+            else:
+                execution_price *= (1 - slippage)
 
-        # Simulate latency
-        await asyncio.sleep(self.settings.simulator.latency_ms / 1000.0)
+            fill_sz = self._allowed_fill_size(
+                order.market_id, order.platform, order.side, order.size
+            )
+            if fill_sz <= 0:
+                return
 
-        # Create trade
-        trade = Trade(
-            trade_id=str(uuid.uuid4()),
-            market_id=order.market_id,
-            platform=order.platform,
-            side=order.side,
-            price=execution_price,
-            size=fill_sz,
-            timestamp=datetime.utcnow(),
-            order_id=order.order_id,
-            strategy_id=order.strategy_id,
-            fees=execution_price * fill_sz * 0.001  # 0.1% fee
-        )
+            # Simulate latency
+            await asyncio.sleep(self.settings.simulator.latency_ms / 1000.0)
 
-        # Update balance
-        cost = execution_price * fill_sz
-        if order.side == OrderSide.BUY:
-            self.current_balance -= cost + trade.fees
-        else:
-            self.current_balance += cost - trade.fees
+            if from_pending:
+                live = self.pending_orders.get(order_id)
+                if live is None or live.status not in (
+                    OrderStatus.OPEN,
+                    OrderStatus.PARTIALLY_FILLED,
+                ):
+                    return
+                order = live
+                fill_sz = min(
+                    fill_sz,
+                    self._allowed_fill_size(
+                        order.market_id, order.platform, order.side, order.size
+                    ),
+                )
+                if fill_sz <= 0:
+                    return
 
-        # Store trade
-        self.trades.append(trade)
-        self.storage.save_trade(trade)
+            # Create trade
+            trade = Trade(
+                trade_id=str(uuid.uuid4()),
+                market_id=order.market_id,
+                platform=order.platform,
+                side=order.side,
+                price=execution_price,
+                size=fill_sz,
+                timestamp=datetime.utcnow(),
+                order_id=order.order_id,
+                strategy_id=order.strategy_id,
+                fees=execution_price * fill_sz * 0.001  # 0.1% fee
+            )
 
-        # Update position
-        await self._update_position(trade)
-        await self._notify_fill(trade)
+            # Update balance
+            cost = execution_price * fill_sz
+            if order.side == OrderSide.BUY:
+                self.current_balance -= cost + trade.fees
+            else:
+                self.current_balance += cost - trade.fees
 
-        order.filled_size = (order.filled_size or 0.0) + fill_sz
-        remaining = float(order.size) - fill_sz
-        if remaining > 1e-12:
-            order.size = remaining
-            order.status = OrderStatus.PARTIALLY_FILLED
+            # Store trade
+            self.trades.append(trade)
+            self.storage.save_trade(trade)
+
+            # Update position
+            await self._update_position(trade)
+            await self._notify_fill(trade)
+
+            order.filled_size = (order.filled_size or 0.0) + fill_sz
+            remaining = float(order.size) - fill_sz
+            if remaining > 1e-12:
+                order.size = remaining
+                order.status = OrderStatus.PARTIALLY_FILLED
+                order.updated_at = datetime.utcnow()
+                self.storage.save_order(order)
+                self.logger.info(
+                    f"Partial fill {order.order_id} {fill_sz}/{remaining + fill_sz} at {execution_price:.4f}"
+                )
+                return
+
+            order.status = OrderStatus.FILLED
+            order.size = order.filled_size
             order.updated_at = datetime.utcnow()
             self.storage.save_order(order)
-            self.logger.info(f"Partial fill {order.order_id} {fill_sz}/{remaining + fill_sz} at {execution_price:.4f}")
-            return
-
-        order.status = OrderStatus.FILLED
-        order.size = order.filled_size
-        order.updated_at = datetime.utcnow()
-        self.storage.save_order(order)
-        del self.pending_orders[order.order_id]
-        self.logger.info(f"Filled order {order.order_id} at {execution_price:.4f}")
+            self.pending_orders.pop(order_id, None)
+            self.logger.info(f"Filled order {order.order_id} at {execution_price:.4f}")
     
     async def _process_strategy_signals(self):
         """Process signals from strategies"""
