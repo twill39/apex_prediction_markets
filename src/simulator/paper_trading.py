@@ -526,7 +526,6 @@ class PaperTradingSimulator(BaseSimulator):
         position_key = f"{trade.market_id}_{trade.platform.value}"
         
         if position_key not in self.positions:
-            from src.data.models import PositionSide
             position = Position(
                 position_id=position_key,
                 market_id=trade.market_id,
