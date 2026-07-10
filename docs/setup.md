@@ -187,7 +187,7 @@ python scripts/run_strategy.py --strategy copy_trading --mode historical --data-
 
 For more detail on each strategy and what to expect, see [GUIDES.md](GUIDES.md).
 
-For live paper trading of the S&P band market on EC2 (bounds file + Schwab SPX feed), see [paper_trading_ec2.md](paper_trading_ec2.md).
+For live paper trading of the S&P band market on EC2, see [ec2_instance_flow.md](ec2_instance_flow.md) (full SSH → run → monitor flow) and [paper_trading_ec2.md](paper_trading_ec2.md) (config reference).
 
 ---
 
