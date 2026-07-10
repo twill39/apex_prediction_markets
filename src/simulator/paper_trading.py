@@ -182,6 +182,7 @@ class PaperTradingSimulator(BaseSimulator):
             self._schwab = SchwabSpxStream(
                 symbol=self.settings.simulator.schwab_symbol,
                 poll_interval_seconds=self.settings.simulator.spx_poll_interval_seconds,
+                use_stream=self.settings.simulator.schwab_spx_use_stream,
             )
             self._schwab.start(self._on_spx_price_thread)
             self.logger.info(

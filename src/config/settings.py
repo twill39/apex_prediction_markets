@@ -141,6 +141,10 @@ class SimulatorSettings(BaseModel):
         default=5.0,
         description="REST poll interval when Schwab stream is unavailable",
     )
+    schwab_spx_use_stream: bool = Field(
+        default=False,
+        description="Use Schwab WebSocket stream for SPX (requires Trader API); otherwise REST poll",
+    )
 
 
 class Settings(BaseModel):
@@ -237,6 +241,7 @@ class Settings(BaseModel):
                 bounds_file=os.getenv("SIMULATOR_BOUNDS_FILE", "data/kalshi_market_bounds.json"),
                 spx_stale_seconds=float(os.getenv("SIMULATOR_SPX_STALE_SECONDS", "120")),
                 spx_poll_interval_seconds=float(os.getenv("SIMULATOR_SPX_POLL_INTERVAL_SECONDS", "5")),
+                schwab_spx_use_stream=os.getenv("SIMULATOR_SCHWAB_SPX_USE_STREAM", "False").lower() in ("true", "1", "t", "yes"),
             )
         )
 

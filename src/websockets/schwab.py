@@ -120,10 +120,12 @@ class SchwabSpxStream:
         symbol: str = "$SPX",
         poll_interval_seconds: float = 5.0,
         stream_warmup_seconds: float = 15.0,
+        use_stream: bool = False,
     ):
         self.symbol = symbol
         self.poll_interval_seconds = max(float(poll_interval_seconds), 1.0)
         self.stream_warmup_seconds = max(float(stream_warmup_seconds), 5.0)
+        self.use_stream = use_stream
         self.logger = get_logger("SchwabSpxStream")
 
         self._on_price: Optional[PriceCallback] = None
@@ -246,13 +248,59 @@ class SchwabSpxStream:
             self._streamer = None
             return False
 
+    def _streamer_available(self) -> bool:
+        """Return True if Trader API userPreference exposes streamer info."""
+        if self._client is None:
+            return False
+        try:
+            info = self._client._get_streamer_info()
+            if info and info.get("streamerSocketUrl"):
+                return True
+            self.logger.warning(
+                "Schwab streamerInfo missing in userPreference; using REST poll for %s",
+                self.symbol,
+            )
+        except Exception as exc:
+            self.logger.warning(
+                "Schwab streamer unavailable (%s); using REST poll for %s",
+                exc,
+                self.symbol,
+            )
+        return False
+
+    def _start_poll_thread(self) -> None:
+        if self._poll_thread is not None and self._poll_thread.is_alive():
+            return
+        self._poll_thread = threading.Thread(
+            target=self._poll_loop,
+            name="SchwabSpxPoll",
+            daemon=True,
+        )
+        self._poll_thread.start()
+
     def start(self, on_price: PriceCallback) -> None:
-        """Start stream (with poll fallback) and invoke on_price from a background thread."""
+        """Start SPX feed via REST poll (default) or optional Schwab stream."""
         if self._started:
             return
         self._on_price = on_price
         self._stop_event.clear()
         self._client = self._build_client()
+
+        if not self.use_stream:
+            self.logger.info(
+                "Schwab SPX REST poll for %s every %.1fs (stream disabled)",
+                self.symbol,
+                self.poll_interval_seconds,
+            )
+            self._start_poll_thread()
+            self._started = True
+            return
+
+        if not self._streamer_available():
+            self._use_poll_fallback = True
+            self._start_poll_thread()
+            self._started = True
+            return
 
         stream_ok = self._start_stream()
         if stream_ok:
@@ -277,12 +325,7 @@ class SchwabSpxStream:
             self._use_poll_fallback = True
 
         if self._use_poll_fallback:
-            self._poll_thread = threading.Thread(
-                target=self._poll_loop,
-                name="SchwabSpxPoll",
-                daemon=True,
-            )
-            self._poll_thread.start()
+            self._start_poll_thread()
 
         self._started = True
 

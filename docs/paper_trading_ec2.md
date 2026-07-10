@@ -38,6 +38,8 @@ export SIMULATOR_USE_SCHWAB_SPX=True
 
 Schwab OAuth tokens must already exist on the instance (schwabdev stores them locally after the first browser auth). Copy the token database from your dev machine if needed, or complete OAuth once on EC2.
 
+**SPX feed mode:** By default the paper trader uses **REST polling** (`quote` / `price_history`) every ~5 seconds — the same APIs as `fetch_schwab_spx_minute_history.py`. Schwab **WebSocket streaming** is optional and requires the **Trader API** enabled on your Schwab app (streaming uses `GET /userPreference` → `streamerInfo`, not the Market Data API alone). If you see `HTTP 401` / `streamerInfo` errors, leave streaming off (default) or enable Trader API in the developer portal and set `SIMULATOR_SCHWAB_SPX_USE_STREAM=True`.
+
 Optional simulator tuning:
 
 ```bash
