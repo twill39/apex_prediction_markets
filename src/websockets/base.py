@@ -90,11 +90,21 @@ class BaseWebSocketManager(ABC):
             self.event_callbacks[event_type].remove(callback)
     
     def _emit_event(self, event: WebSocketEvent):
-        """Emit an event to all registered callbacks"""
+        """Emit an event to all registered callbacks (sync handlers only)."""
         callbacks = self.event_callbacks.get(event.event_type, [])
         for callback in callbacks:
             try:
-                callback(event)
+                if asyncio.iscoroutinefunction(callback):
+                    loop = asyncio.get_running_loop()
+                    loop.create_task(callback(event))
+                else:
+                    callback(event)
+            except RuntimeError:
+                # No running loop; cannot schedule async callback.
+                self.logger.error(
+                    "No event loop to dispatch async callback for %s",
+                    event.event_type,
+                )
             except Exception as e:
                 self.logger.error(f"Error in callback for {event.event_type}: {e}", exc_info=True)
     

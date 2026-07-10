@@ -147,7 +147,7 @@ python scripts/run_strategy.py \
   --markets "YOUR-TICKER" \
   --bounds-file data/kalshi_market_bounds.json \
   --spx-stream \
-  --duration 390
+  --duration 410
 ```
 
 ### Step 4 — Use tmux so disconnect does not kill the run
