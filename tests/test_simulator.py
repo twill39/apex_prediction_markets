@@ -1,14 +1,31 @@
 """Tests for simulator"""
 
+import asyncio
 import pytest
 import json
+import time
 from datetime import datetime
+from unittest.mock import Mock
 
 from src.simulator.historical import HistoricalSimulator
 from src.simulator.paper_trading import PaperTradingSimulator
 from src.simulator.metrics import calculate_metrics, PerformanceMetrics
-from src.data.models import Trade, Platform, OrderSide, Position, PositionSide
+from src.data.models import (
+    OrderBook,
+    OrderBookLevel,
+    OrderStatus,
+    Platform,
+    Position,
+    PositionSide,
+    Trade,
+    OrderSide,
+)
+from src.strategies.base import StrategySignal
 from src.strategies.market_making import MarketMakingStrategy
+from src.strategies.base import StrategyState
+from src.strategies.market_making_as import (
+    MarketMakingStrategy as MarketMakingAsStrategy,
+)
 
 
 def test_historical_simulator_initialization():
@@ -91,6 +108,177 @@ async def test_paper_trading_injects_bounds_once(tmp_path):
     assert len(strategy.bounds_events) == 1
     assert strategy.bounds_events[0]["lower_bound"] == 7200.0
     assert ticker in simulator._bounds_injected
+
+
+def _paper_book(market_id: str = "KXTEST") -> OrderBook:
+    return OrderBook(
+        market_id=market_id,
+        platform=Platform.KALSHI,
+        bids=[OrderBookLevel(price=0.40, size=10)],
+        asks=[OrderBookLevel(price=0.60, size=10)],
+    )
+
+
+@pytest.mark.asyncio
+async def test_paper_cancel_replace_persists_partial_order_cancellation():
+    simulator = PaperTradingSimulator()
+    simulator.storage = Mock()
+    simulator.market_state["KXTEST"] = {"orderbook": _paper_book()}
+
+    first = StrategySignal(
+        market_id="KXTEST",
+        platform=Platform.KALSHI,
+        side="buy",
+        size=3,
+        price=0.40,
+        order_type="limit",
+    )
+    await simulator.execute_signal(first, strategy_id="test")
+    old = next(iter(simulator.pending_orders.values()))
+    old.status = OrderStatus.PARTIALLY_FILLED
+    old.filled_size = 1
+    old.size = 2
+
+    replacement = first.model_copy(update={"price": 0.39})
+    await simulator.execute_signal(replacement, strategy_id="test")
+
+    assert old.status == OrderStatus.CANCELLED
+    assert old.metadata["cancel_reason"] == "replaced"
+    assert len(simulator.pending_orders) == 1
+    assert next(iter(simulator.pending_orders.values())).price == pytest.approx(0.39)
+    simulator.storage.save_order.assert_any_call(old)
+
+
+@pytest.mark.asyncio
+async def test_paper_cancel_during_latency_prevents_fill():
+    simulator = PaperTradingSimulator()
+    simulator.storage = Mock()
+    simulator.settings.simulator.latency_ms = 50
+    book = _paper_book()
+    simulator.market_state["KXTEST"] = {"orderbook": book}
+    signal = StrategySignal(
+        market_id="KXTEST",
+        platform=Platform.KALSHI,
+        side="buy",
+        size=2,
+        price=0.60,
+        order_type="limit",
+    )
+    await simulator.execute_signal(signal, strategy_id="test")
+    order = next(iter(simulator.pending_orders.values()))
+
+    fill_task = asyncio.create_task(
+        simulator._fill_order(order, book, execution_price_override=0.60)
+    )
+    await asyncio.sleep(0.01)
+    await simulator.execute_signal(
+        signal.model_copy(update={"size": 0.0}), strategy_id="test"
+    )
+    assert await fill_task is None
+
+    assert order.status == OrderStatus.CANCELLED
+    assert simulator.trades == []
+    assert simulator.pending_orders == {}
+
+
+@pytest.mark.asyncio
+async def test_paper_public_trade_fills_passive_limit():
+    simulator = PaperTradingSimulator()
+    simulator.storage = Mock()
+    simulator.settings.simulator.latency_ms = 0
+    simulator.current_balance = 100.0
+    book = _paper_book()
+    simulator.market_state["KXTEST"] = {"orderbook": book}
+    await simulator.execute_signal(
+        StrategySignal(
+            market_id="KXTEST",
+            platform=Platform.KALSHI,
+            side="buy",
+            size=2,
+            price=0.40,
+            order_type="limit",
+        ),
+        strategy_id="test",
+    )
+
+    await simulator._check_trade_fills(
+        Trade(
+            trade_id="public-1",
+            market_id="KXTEST",
+            platform=Platform.KALSHI,
+            side=OrderSide.SELL,
+            price=0.40,
+            size=2,
+        )
+    )
+
+    assert len(simulator.trades) == 1
+    assert simulator.trades[0].price == pytest.approx(0.40)
+    assert simulator.pending_orders == {}
+
+
+@pytest.mark.asyncio
+async def test_paper_eod_signal_flattens_strategy_and_simulator_inventory():
+    simulator = PaperTradingSimulator()
+    simulator.use_schwab_spx = False
+    simulator.storage = Mock()
+    simulator.settings.simulator.latency_ms = 0
+    book = _paper_book()
+    simulator.market_state["KXTEST"] = {"orderbook": book}
+    simulator.positions["KXTEST_kalshi"] = Position(
+        position_id="KXTEST_kalshi",
+        market_id="KXTEST",
+        platform=Platform.KALSHI,
+        side=PositionSide.LONG,
+        size=3,
+        average_price=0.35,
+        opened_at=datetime.utcnow(),
+    )
+
+    strategy = MarketMakingAsStrategy()
+    strategy.state = StrategyState.RUNNING
+    strategy.orderbooks["KXTEST"] = book
+    strategy.active_markets["KXTEST"] = {
+        "platform": Platform.KALSHI,
+        "eod_timestamp": time.time() - 1,
+    }
+    strategy.inventory["KXTEST"] = 3
+    simulator.add_strategy(strategy)
+
+    await simulator._process_strategy_signals()
+
+    assert strategy.get_inventory("KXTEST") == pytest.approx(0)
+    assert simulator.positions["KXTEST_kalshi"].size == pytest.approx(0)
+    assert len(simulator.trades) == 1
+    assert simulator.trades[0].side == OrderSide.SELL
+
+
+def test_paper_feed_health_fails_closed_while_waiting_for_fresh_snapshot():
+    simulator = PaperTradingSimulator(markets=["KXTEST"])
+    simulator.use_schwab_spx = False
+    simulator.settings.simulator.feed_startup_grace_seconds = 1
+    simulator.settings.simulator.market_data_stale_seconds = 5
+    simulator._run_started_monotonic = time.monotonic() - 10
+    simulator._subscribed_market_ids = {"KXTEST"}
+    simulator._market_unready_since = {"KXTEST": time.monotonic() - 10}
+
+    assert (
+        simulator._feed_health_error()
+        == "no fresh orderbook snapshot for KXTEST after 10s"
+    )
+
+
+def test_paper_feed_health_allows_quiet_book_after_valid_snapshot():
+    simulator = PaperTradingSimulator(markets=["KXTEST"])
+    simulator.use_schwab_spx = False
+    simulator.settings.simulator.feed_startup_grace_seconds = 1
+    simulator.settings.simulator.market_data_stale_seconds = 5
+    simulator._run_started_monotonic = time.monotonic() - 300
+    simulator._subscribed_market_ids = {"KXTEST"}
+    simulator._last_orderbook_monotonic = {"KXTEST": time.monotonic() - 300}
+    simulator._market_unready_since = {}
+
+    assert simulator._feed_health_error() is None
 
 
 def test_schwab_parse_stream_price():

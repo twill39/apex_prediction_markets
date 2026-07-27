@@ -26,10 +26,6 @@ from src.utils.logger import get_logger
 # from local reversal frequency). Set True to restore previous behavior.
 MM_AS_REGIME_SCORE_ENABLED = True
 
-# Extra inventory discipline (skew, hard gate, EOD flatten, regime/inventory-sized lots).
-# False = base A-S only: reservation price + optimal spread in `quotes()`, fixed small sizes.
-MM_AS_INVENTORY_OVERLAYS_ENABLED = False
-
 # When overlays are off: quote at most this many contracts per side each update (if room permits).
 MM_AS_BASE_QUOTE_SIZE = 4.0
 
@@ -51,6 +47,8 @@ class MarketMakingStrategy(BaseStrategy):
         # ADDED FIELDS
         self.current_quotes: Dict[str, Dict[str, float]] = {}  # market_id -> {bid, ask}
         self.last_quote_update: Dict[str, datetime] = {}  # market_id -> last update time
+        self.last_eod_flatten_attempt: Dict[str, datetime] = {}
+        self.eod_cancelled_markets: set[str] = set()
         self.quote_update_interval = timedelta(
             seconds=max(self.mm_as_settings.quote_update_interval_seconds, 0.0)
         )
@@ -76,6 +74,7 @@ class MarketMakingStrategy(BaseStrategy):
         # Discovered markets (from discovery API)
         self.discovered_market_ids: List[str] = []
         self.historical_market_metadata: Dict[str, Dict[str, float]] = {}
+        self.market_metadata: Dict[str, Dict[str, float]] = {}
 
         # WebSocket clients
         self.kalshi_ws: Optional[KalshiWebSocket] = None
@@ -95,11 +94,14 @@ class MarketMakingStrategy(BaseStrategy):
     # ── estimators ────────────────────────────────────────────────────────────────
 
     @staticmethod
-    def rolling_realized_vol(price_history: PriceHistory) -> Optional[float]:
+    def rolling_realized_vol(
+        price_history: Optional[PriceHistory],
+    ) -> Optional[float]:
         """
         Compute realized volatility from a rolling window of mid prices.
         """
-        
+        if price_history is None:
+            return None
         prices = price_history.get_prices()
         
         if prices is None or len(prices) < 2:
@@ -314,10 +316,26 @@ class MarketMakingStrategy(BaseStrategy):
         """Initialize the strategy"""
         self.logger.info("Initializing market making strategy")
 
-        # If using historical data, skip the websockets
-        if getattr(self, "mode", None) == "historical":
+        mode = getattr(self, "mode", None)
+        # Simulators own their market-data clients. The strategy consumes events
+        # injected by the simulator and must not create a duplicate connection.
+        if mode == "historical":
             self._bootstrap_historical_market_metadata()
             self.logger.info("Historical mode — skipping WebSocket init and market discovery")
+            return
+        if mode == "paper":
+            configured = list(getattr(self, "configured_market_ids", []) or [])
+            if configured:
+                self.logger.info(
+                    "Paper mode — simulator owns feeds; using %d configured market(s)",
+                    len(configured),
+                )
+                return
+            await self._identify_markets()
+            self.logger.info(
+                "Paper mode — simulator owns feeds; discovered %d market(s)",
+                len(self.discovered_market_ids),
+            )
             return
         
         # Initialize WebSocket clients
@@ -454,7 +472,7 @@ class MarketMakingStrategy(BaseStrategy):
         orderbook = self.orderbooks.get(market_id)
         if getattr(self, "mode", None) == "historical" and orderbook is not None:
             return orderbook.timestamp
-        return datetime.utcnow()
+        return datetime.now(timezone.utc)
     
     def _calculate_fair_value(self, market_id: str, orderbook: OrderBook) -> Optional[float]:
         """Calculate fair value for a market"""
@@ -542,10 +560,12 @@ class MarketMakingStrategy(BaseStrategy):
 
         market_id = data.get("market_id")
         if market_id:
+            metadata = self.market_metadata.setdefault(market_id, {})
+            for key in ("lower_bound", "upper_bound", "eod_timestamp"):
+                if key in data:
+                    metadata[key] = data[key]
             if market_id in self.active_markets:
-                for key in ("lower_bound", "upper_bound", "eod_timestamp"):
-                    if key in data:
-                        self.active_markets[market_id][key] = data[key]
+                self.active_markets[market_id].update(metadata)
                 model_fair = self._compute_band_fair_value(market_id)
                 if model_fair is not None:
                     self.model_fair_values[market_id] = model_fair
@@ -618,7 +638,9 @@ class MarketMakingStrategy(BaseStrategy):
         if lower_f >= upper_f:
             return None
 
-        current_time = now or datetime.utcnow()
+        current_time = now or datetime.now(timezone.utc)
+        if current_time.tzinfo is None:
+            current_time = current_time.replace(tzinfo=timezone.utc)
         if eod_f is not None:
             time_to_close = max(eod_f - current_time.timestamp(), 0.0)
         else:
@@ -634,6 +656,20 @@ class MarketMakingStrategy(BaseStrategy):
             lo_ret, loc=self.cauchy_x0, scale=gamma_t
         )
         return float(min(max(prob, 0.0), 1.0))
+
+    def _underlying_is_fresh(self, now: datetime) -> bool:
+        """Return whether the latest underlying observation is safe for quoting."""
+        latest = self.underlying_state.latest()
+        if latest is None:
+            return False
+        current = now
+        observed = latest.timestamp
+        if current.tzinfo is None:
+            current = current.replace(tzinfo=timezone.utc)
+        if observed.tzinfo is None:
+            observed = observed.replace(tzinfo=timezone.utc)
+        age = (current - observed).total_seconds()
+        return 0.0 <= age <= float(self.settings.simulator.spx_stale_seconds)
     
     async def on_orderbook_update(self, orderbook: OrderBook):
         """Handle order book update"""
@@ -651,7 +687,7 @@ class MarketMakingStrategy(BaseStrategy):
         
         # Calculate fair value
         fair_value = self._calculate_fair_value(market_id, orderbook)
-        if fair_value:
+        if fair_value is not None:
             self.fair_values[market_id] = fair_value
         
         # Check if market is suitable
@@ -662,6 +698,7 @@ class MarketMakingStrategy(BaseStrategy):
                     "started_at": datetime.utcnow()
                 }
                 market_state.update(self.historical_market_metadata.get(market_id, {}))
+                market_state.update(self.market_metadata.get(market_id, {}))
                 self.active_markets[market_id] = market_state
                 self.logger.info(f"Started market making on {market_id}")
                 model_fair = self._compute_band_fair_value(market_id)
@@ -678,7 +715,7 @@ class MarketMakingStrategy(BaseStrategy):
         # For now, we'll generate signals for quote updates
         
         fair_value = self.fair_values.get(market_id)
-        if not fair_value:
+        if fair_value is None:
             return
         
         # Calculate quote prices (fair value ± small spread)
@@ -842,8 +879,54 @@ class MarketMakingStrategy(BaseStrategy):
             if not orderbook:
                 continue
             now = self._get_reference_time(market_id)
+            platform = market_data.get("platform", orderbook.platform)
+            seconds_to_eod = self._seconds_to_eod(market_id, now)
+            if seconds_to_eod is not None and seconds_to_eod <= 0:
+                last_attempt = self.last_eod_flatten_attempt.get(market_id)
+                if (
+                    last_attempt is not None
+                    and now - last_attempt < self.quote_update_interval
+                ):
+                    continue
+                if market_id not in self.eod_cancelled_markets:
+                    for side in ("buy", "sell"):
+                        signals.append(
+                            StrategySignal(
+                                market_id=market_id,
+                                platform=platform,
+                                side=side,
+                                size=0.0,
+                                price=None,
+                                order_type="limit",
+                                confidence=0.0,
+                                reason="MM cancel at market EOD",
+                                timestamp=now,
+                            )
+                        )
+                    self.eod_cancelled_markets.add(market_id)
+                inventory = self.get_inventory(market_id)
+                if abs(inventory) > 1e-9:
+                    signals.append(
+                        StrategySignal(
+                            market_id=market_id,
+                            platform=platform,
+                            side="sell" if inventory > 0 else "buy",
+                            size=abs(inventory),
+                            price=None,
+                            order_type="market",
+                            confidence=1.0,
+                            reason="MM flatten inventory at market EOD",
+                            timestamp=now,
+                        )
+                    )
+                self.last_eod_flatten_attempt[market_id] = now
+                continue
 
-            mfv = self.model_fair_values.get(market_id)
+            mfv = (
+                self.model_fair_values.get(market_id)
+                if self._underlying_is_fresh(now)
+                else None
+            )
             bfv = self.fair_values.get(market_id)
             fair_value = mfv if mfv is not None else bfv
             if fair_value is None:
@@ -865,13 +948,14 @@ class MarketMakingStrategy(BaseStrategy):
                 if price_move < self.quote_reprice_threshold:
                     continue  # fair value hasn't moved enough, skip
 
-            platform = market_data.get("platform", orderbook.platform)
             # ρ from reversal-bucket regime_score; see MM_AS_REGIME_SCORE_ENABLED.
             rho = self._compute_rho(market_id)
             sigma = self.rolling_realized_vol(self.price_histories.get(market_id)) or 0.0
             q = self.get_inventory(market_id)
             t = 0.0
             T = max(self.mm_as_settings.session_horizon_seconds, 1.0)
+            if seconds_to_eod is not None:
+                T = max(min(T, seconds_to_eod), 1.0)
             try:
                 bid_price, ask_price = self.quotes(
                     s=fair_value,
@@ -908,7 +992,7 @@ class MarketMakingStrategy(BaseStrategy):
             room_long = max(0.0, max_pos - q)
             room_short = max(0.0, max_pos + q)
 
-            if MM_AS_INVENTORY_OVERLAYS_ENABLED:
+            if self.mm_as_settings.inventory_overlays_enabled:
                 q_norm = float(np.clip(q / max_pos, -1.0, 1.0))
                 flatten_u = self._flatten_pressure(market_id, now)
                 z_band = self._band_position_z(market_id)

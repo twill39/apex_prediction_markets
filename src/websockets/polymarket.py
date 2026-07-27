@@ -3,7 +3,7 @@
 import asyncio
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
 
 from .base import BaseWebSocketManager, WebSocketEvent, WebSocketEventType
@@ -54,6 +54,12 @@ class PolymarketWebSocket(BaseWebSocketManager):
         # User channel: auth is done via auth object in subscribe(), not a separate message.
         self.logger.debug("Polymarket user channel: auth is sent with subscription")
         return True
+
+    async def connect(self):
+        """Connect and restore asset subscriptions after reconnects."""
+        await super().connect()
+        if self.market_subscriptions:
+            await self.subscribe_assets(list(self.market_subscriptions))
     
     async def subscribe(self, channel: str, **kwargs) -> bool:
         """Subscribe to a Polymarket channel.
@@ -138,11 +144,11 @@ class PolymarketWebSocket(BaseWebSocketManager):
             event_type = data.get("event_type") or data.get("type") or ""
             
             # Order book snapshot
-            if event_type == "book":
+            if event_type in ["book", "orderbook"]:
                 return self._parse_orderbook(data)
             
             # Trade execution
-            elif event_type == "last_trade_price":
+            elif event_type in ["last_trade_price", "trade"]:
                 return self._parse_trade(data)
             
             # Market update
@@ -150,7 +156,7 @@ class PolymarketWebSocket(BaseWebSocketManager):
                 return self._parse_market_update(data)
             
             # Status/error messages
-            elif msg_type in ["status", "error", "auth_success"]:
+            elif event_type in ["status", "error", "auth_success"]:
                 self.logger.debug(f"Status message: {data}")
                 return None
             
@@ -214,13 +220,13 @@ class PolymarketWebSocket(BaseWebSocketManager):
         # Polymarket timestamps are typically ms since epoch.
         try:
             if isinstance(ts, str) and ts.isdigit():
-                ts_dt = datetime.fromtimestamp(int(ts) / 1000.0)
+                ts_dt = datetime.fromtimestamp(int(ts) / 1000.0, tz=timezone.utc)
             elif isinstance(ts, (int, float)):
-                ts_dt = datetime.fromtimestamp(float(ts) / 1000.0)
+                ts_dt = datetime.fromtimestamp(float(ts) / 1000.0, tz=timezone.utc)
             else:
-                ts_dt = datetime.utcnow()
+                ts_dt = datetime.now(timezone.utc)
         except Exception:
-            ts_dt = datetime.utcnow()
+            ts_dt = datetime.now(timezone.utc)
 
         orderbook = OrderBook(
             market_id=market_id,
@@ -233,11 +239,11 @@ class PolymarketWebSocket(BaseWebSocketManager):
         return WebSocketEvent(
             event_type=WebSocketEventType.ORDERBOOK_UPDATE,
             data={"orderbook": orderbook.model_dump()},
-            timestamp=datetime.utcnow(),
+            timestamp=ts_dt,
             market_id=market_id
         )
     
-    def _parse_trade(self, data: Dict[str, Any]) -> WebSocketEvent:
+    def _parse_trade(self, data: Dict[str, Any]) -> Optional[WebSocketEvent]:
         """Parse trade update"""
         market_id = data.get("asset_id") or data.get("market_id") or data.get("market") or data.get("channel", "").split(":")[-1]
         
@@ -245,8 +251,13 @@ class PolymarketWebSocket(BaseWebSocketManager):
         side_str = str(data.get("side", "")).strip().lower()
         if side_str in ["buy", "b", "yes"]:
             side = OrderSide.BUY
-        else:
+        elif side_str in ["sell", "s", "no"]:
             side = OrderSide.SELL
+        else:
+            self.logger.warning(
+                "Ignoring Polymarket trade with unknown side: %r", side_str
+            )
+            return None
         
         # Extract trading addresses
         metadata = {}

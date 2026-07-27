@@ -30,6 +30,9 @@ class DataStorage:
         """Initialize database schema"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.execute("PRAGMA busy_timeout=5000")
         
         # Markets table
         cursor.execute("""

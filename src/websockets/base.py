@@ -1,11 +1,12 @@
 """Base WebSocket manager with common functionality"""
 
 import asyncio
+import inspect
 import json
 import logging
 import ssl
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional, Dict, Any, Callable, List, TYPE_CHECKING, Union
 from dataclasses import dataclass
@@ -61,6 +62,7 @@ class BaseWebSocketManager(ABC):
         self.is_connected = False
         self.is_running = False
         self.reconnect_attempts = 0
+        self.last_message_at: Optional[datetime] = None
         self.logger = logging.getLogger(f"{self.__class__.__name__}")
         
         # Event callbacks
@@ -94,9 +96,10 @@ class BaseWebSocketManager(ABC):
         callbacks = self.event_callbacks.get(event.event_type, [])
         for callback in callbacks:
             try:
-                if asyncio.iscoroutinefunction(callback):
+                if inspect.iscoroutinefunction(callback):
                     loop = asyncio.get_running_loop()
-                    loop.create_task(callback(event))
+                    task = loop.create_task(callback(event))
+                    task.add_done_callback(self._log_callback_result)
                 else:
                     callback(event)
             except RuntimeError:
@@ -107,6 +110,32 @@ class BaseWebSocketManager(ABC):
                 )
             except Exception as e:
                 self.logger.error(f"Error in callback for {event.event_type}: {e}", exc_info=True)
+
+    def _log_callback_result(self, task: asyncio.Task) -> None:
+        """Retrieve callback task exceptions so they cannot fail silently."""
+        if task.cancelled():
+            return
+        try:
+            task.result()
+        except Exception as exc:
+            self.logger.error("Async WebSocket callback failed: %s", exc, exc_info=exc)
+
+    def _on_connection_lost(self) -> None:
+        """Hook for subclasses to invalidate connection-scoped state."""
+
+    def _mark_connection_lost(self) -> None:
+        """Mark a live connection down and notify listeners once."""
+        was_connected = self.is_connected
+        self.is_connected = False
+        self._on_connection_lost()
+        if was_connected:
+            self._emit_event(
+                WebSocketEvent(
+                    event_type=WebSocketEventType.DISCONNECTED,
+                    data={"url": self.url},
+                    timestamp=datetime.now(timezone.utc),
+                )
+            )
     
     @abstractmethod
     async def authenticate(self) -> bool:
@@ -193,14 +222,7 @@ class BaseWebSocketManager(ABC):
                 self.logger.error(f"Error closing connection: {e}")
             finally:
                 self.websocket = None
-                self.is_connected = False
-                
-                event = WebSocketEvent(
-                    event_type=WebSocketEventType.DISCONNECTED,
-                    data={},
-                    timestamp=datetime.utcnow()
-                )
-                self._emit_event(event)
+                self._mark_connection_lost()
                 self.logger.info("WebSocket disconnected")
     
     async def send_message(self, message: Dict[str, Any]):
@@ -222,6 +244,7 @@ class BaseWebSocketManager(ABC):
                     break
                 
                 message = await self.websocket.recv()
+                self.last_message_at = datetime.now(timezone.utc)
                 event = self.parse_message(message)
                 
                 if event:
@@ -229,11 +252,11 @@ class BaseWebSocketManager(ABC):
                     
             except ConnectionClosed:
                 self.logger.warning("WebSocket connection closed")
-                self.is_connected = False
+                self._mark_connection_lost()
                 break
             except WebSocketException as e:
                 self.logger.error(f"WebSocket error: {e}", exc_info=True)
-                self.is_connected = False
+                self._mark_connection_lost()
                 break
             except Exception as e:
                 self.logger.error(f"Unexpected error in receive loop: {e}", exc_info=True)
@@ -243,6 +266,8 @@ class BaseWebSocketManager(ABC):
                     timestamp=datetime.utcnow()
                 )
                 self._emit_event(error_event)
+                self._mark_connection_lost()
+                break
     
     async def _reconnect_loop(self):
         """Reconnection loop"""
@@ -256,7 +281,17 @@ class BaseWebSocketManager(ABC):
                 self.logger.info(f"Attempting to reconnect ({self.reconnect_attempts}/{self.max_reconnect_attempts})")
                 
                 try:
+                    stale_socket = self.websocket
+                    self.websocket = None
+                    if stale_socket is not None:
+                        try:
+                            await stale_socket.close()
+                        except Exception:
+                            pass
                     await self.connect()
+                    # The original receive task exits when a connection drops.
+                    # Own each replacement receive loop here until it drops too.
+                    await self._receive_loop()
                 except Exception as e:
                     self.logger.error(f"Reconnection failed: {e}")
                     if self.is_running:

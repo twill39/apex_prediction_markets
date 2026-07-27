@@ -1,7 +1,7 @@
 """Tests for trading strategies"""
 
 import pytest
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import pandas as pd
 import numpy as np
 
@@ -135,6 +135,77 @@ async def test_market_making_as_tracks_signed_inventory_from_fills():
     await strategy.on_fill(sell_trade)
 
     assert strategy.get_inventory("test_market") == 60.0
+
+
+@pytest.mark.asyncio
+async def test_market_making_as_paper_mode_uses_simulator_owned_feeds():
+    strategy = MarketMakingAsStrategy()
+    strategy.mode = "paper"
+    strategy.configured_market_ids = ["KXTEST"]
+
+    await strategy.initialize()
+
+    assert strategy.kalshi_ws is None
+    assert strategy.polymarket_ws is None
+    assert strategy.discovered_market_ids == []
+
+
+@pytest.mark.asyncio
+async def test_market_making_as_stale_spx_falls_back_to_book_fair_value():
+    strategy = MarketMakingAsStrategy()
+    strategy.state = StrategyState.RUNNING
+    strategy.quote_update_interval = timedelta(0)
+    market_id = "KXTEST"
+    book = OrderBook(
+        market_id=market_id,
+        platform=Platform.KALSHI,
+        timestamp=datetime.now(timezone.utc),
+        bids=[OrderBookLevel(price=0.40, size=10)],
+        asks=[OrderBookLevel(price=0.60, size=10)],
+    )
+    strategy.orderbooks[market_id] = book
+    strategy.active_markets[market_id] = {"platform": Platform.KALSHI}
+    strategy.fair_values[market_id] = 0.50
+    strategy.model_fair_values[market_id] = 0.80
+    strategy.underlying_state.add(
+        datetime.now(timezone.utc) - timedelta(minutes=5),
+        6300.0,
+        source="test",
+    )
+
+    signals = await strategy.generate_signals()
+
+    assert len(signals) == 2
+    assert all("fv=0.5000" in signal.reason for signal in signals)
+
+
+@pytest.mark.asyncio
+async def test_market_making_as_eod_cancels_quotes_and_flattens_inventory():
+    strategy = MarketMakingAsStrategy()
+    strategy.state = StrategyState.RUNNING
+    market_id = "KXTEST"
+    book = OrderBook(
+        market_id=market_id,
+        platform=Platform.KALSHI,
+        timestamp=datetime.now(timezone.utc),
+        bids=[OrderBookLevel(price=0.40, size=10)],
+        asks=[OrderBookLevel(price=0.60, size=10)],
+    )
+    strategy.orderbooks[market_id] = book
+    strategy.active_markets[market_id] = {
+        "platform": Platform.KALSHI,
+        "eod_timestamp": datetime.now(timezone.utc).timestamp() - 1,
+    }
+    strategy.inventory[market_id] = 3.0
+
+    signals = await strategy.generate_signals()
+
+    assert [(signal.side, signal.size, signal.order_type) for signal in signals] == [
+        ("buy", 0.0, "limit"),
+        ("sell", 0.0, "limit"),
+        ("sell", 3.0, "market"),
+    ]
+    assert await strategy.generate_signals() == []
 
 
 def test_market_making_as_quote_sizes_shrink_with_inventory_and_regime():

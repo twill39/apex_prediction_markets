@@ -1,12 +1,22 @@
 """Application settings and configuration"""
 
 import os
+from pathlib import Path
 from typing import Optional
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+# Load the repository .env even when systemd/cron starts from another directory.
+load_dotenv(PROJECT_ROOT / ".env")
+
+
+def _runtime_path(value: str) -> str:
+    path = Path(value).expanduser()
+    if not path.is_absolute():
+        path = PROJECT_ROOT / path
+    return str(path.resolve())
 
 
 class DatabaseSettings(BaseModel):
@@ -18,6 +28,8 @@ class LoggingSettings(BaseModel):
     """Logging configuration"""
     level: str = Field(default="INFO", description="Log level (DEBUG, INFO, WARNING, ERROR)")
     file: Optional[str] = Field(default="./logs/trading_fund.log", description="Log file path")
+    max_bytes: int = Field(default=50 * 1024 * 1024, description="Rotate logs at this size")
+    backup_count: int = Field(default=5, description="Number of rotated logs to retain")
 
 
 class CopyTradingSettings(BaseModel):
@@ -92,6 +104,10 @@ class MarketMakingAsSettings(BaseModel):
         default=1800.0,
         description="Within this many seconds of eod_timestamp, quote only to flatten inventory",
     )
+    inventory_overlays_enabled: bool = Field(
+        default=False,
+        description="Enable inventory skew, hard gates, adaptive sizing, and EOD flatten pressure",
+    )
 
 
 class AltDataSettings(BaseModel):
@@ -145,6 +161,18 @@ class SimulatorSettings(BaseModel):
         default=False,
         description="Use Schwab WebSocket stream for SPX (requires Trader API); otherwise REST poll",
     )
+    market_data_stale_seconds: float = Field(
+        default=60.0,
+        description="Fail closed when a configured paper market has no book update for this long",
+    )
+    feed_startup_grace_seconds: float = Field(
+        default=30.0,
+        description="Time allowed for paper feeds to connect and publish their first book",
+    )
+    feed_disconnect_grace_seconds: float = Field(
+        default=60.0,
+        description="Time allowed for a paper WebSocket to reconnect before stopping",
+    )
 
 
 class Settings(BaseModel):
@@ -163,11 +191,13 @@ class Settings(BaseModel):
         mm_as_max = float(os.getenv("MARKET_MAKING_AS_MAX_POSITION", os.getenv("MARKET_MAKING_MAX_POSITION", "50")))
         return cls(
             database=DatabaseSettings(
-                path=os.getenv("DATABASE_PATH", "./data/trading_fund.db")
+                path=_runtime_path(os.getenv("DATABASE_PATH", "./data/trading_fund.db"))
             ),
             logging=LoggingSettings(
                 level=os.getenv("LOG_LEVEL", "INFO"),
-                file=os.getenv("LOG_FILE", "./logs/trading_fund.log")
+                file=_runtime_path(os.getenv("LOG_FILE", "./logs/trading_fund.log")),
+                max_bytes=int(os.getenv("LOG_MAX_BYTES", str(50 * 1024 * 1024))),
+                backup_count=int(os.getenv("LOG_BACKUP_COUNT", "5")),
             ),
             copy_trading=CopyTradingSettings(
                 max_position_size=float(os.getenv("COPY_TRADING_MAX_POSITION_SIZE", "1000")),
@@ -216,6 +246,10 @@ class Settings(BaseModel):
                 inventory_quote_skew_coeff=float(os.getenv("MARKET_MAKING_AS_INVENTORY_QUOTE_SKEW_COEFF", "0.03")),
                 band_quote_skew_coeff=float(os.getenv("MARKET_MAKING_AS_BAND_QUOTE_SKEW_COEFF", "0.015")),
                 session_flatten_seconds=float(os.getenv("MARKET_MAKING_AS_SESSION_FLATTEN_SECONDS", "1800.0")),
+                inventory_overlays_enabled=os.getenv(
+                    "MARKET_MAKING_AS_INVENTORY_OVERLAYS_ENABLED", "False"
+                ).lower()
+                in ("true", "1", "t", "yes"),
             ),
             alt_data=AltDataSettings(
                 confidence_threshold=float(os.getenv("ALT_DATA_CONFIDENCE_THRESHOLD", "0.7")),
@@ -238,10 +272,13 @@ class Settings(BaseModel):
                 max_signed_inventory=float(os.getenv("SIMULATOR_MAX_SIGNED_INVENTORY", str(mm_as_max))),
                 use_schwab_spx=os.getenv("SIMULATOR_USE_SCHWAB_SPX", "False").lower() in ("true", "1", "t", "yes"),
                 schwab_symbol=os.getenv("SIMULATOR_SCHWAB_SYMBOL", "$SPX"),
-                bounds_file=os.getenv("SIMULATOR_BOUNDS_FILE", "data/kalshi_market_bounds.json"),
+                bounds_file=_runtime_path(os.getenv("SIMULATOR_BOUNDS_FILE", "data/kalshi_market_bounds.json")),
                 spx_stale_seconds=float(os.getenv("SIMULATOR_SPX_STALE_SECONDS", "120")),
                 spx_poll_interval_seconds=float(os.getenv("SIMULATOR_SPX_POLL_INTERVAL_SECONDS", "5")),
                 schwab_spx_use_stream=os.getenv("SIMULATOR_SCHWAB_SPX_USE_STREAM", "False").lower() in ("true", "1", "t", "yes"),
+                market_data_stale_seconds=float(os.getenv("SIMULATOR_MARKET_DATA_STALE_SECONDS", "60")),
+                feed_startup_grace_seconds=float(os.getenv("SIMULATOR_FEED_STARTUP_GRACE_SECONDS", "30")),
+                feed_disconnect_grace_seconds=float(os.getenv("SIMULATOR_FEED_DISCONNECT_GRACE_SECONDS", "60")),
             )
         )
 

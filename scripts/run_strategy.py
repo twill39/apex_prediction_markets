@@ -3,6 +3,7 @@
 
 import asyncio
 import argparse
+import signal
 import sys
 from pathlib import Path
 from typing import List, Optional
@@ -86,18 +87,65 @@ async def run_strategy(
         )
         simulator.load_historical_data(data_path)
     elif mode == "paper":
+        strategy.mode = "paper"
+        strategy.configured_market_ids = list(markets or [])
+        if bounds_file:
+            bounds_path = Path(bounds_file).expanduser()
+            if not bounds_path.is_absolute():
+                bounds_path = Path(__file__).resolve().parent.parent / bounds_path
+            bounds_file = str(bounds_path.resolve())
         simulator = PaperTradingSimulator(
             markets=markets or [],
             duration_minutes=duration_minutes,
             bounds_file=bounds_file,
             use_schwab_spx=use_schwab_spx,
         )
+        if strategy_name == "market_making_as":
+            if not markets:
+                logger.error("market_making_as paper mode requires --markets")
+                return
+            missing_bounds = [
+                market_id
+                for market_id in markets
+                if market_id not in simulator._market_bounds
+            ]
+            if missing_bounds:
+                logger.error(
+                    "Bounds file has no usable row for configured market(s): %s",
+                    ", ".join(missing_bounds),
+                )
+                return
+            if not simulator.use_schwab_spx:
+                logger.error(
+                    "market_making_as paper mode requires the SPX feed "
+                    "(--spx-stream or SIMULATOR_USE_SCHWAB_SPX=True)"
+                )
+                return
+            if not simulator.settings.simulator.use_kalshi:
+                logger.error(
+                    "Kalshi paper markets require SIMULATOR_USE_KALSHI=True"
+                )
+                return
     else:
         logger.error(f"Unknown mode: {mode}")
         return
     
     # Add strategy to simulator
     simulator.add_strategy(strategy)
+
+    loop = asyncio.get_running_loop()
+    registered_signals = []
+
+    def request_stop() -> None:
+        logger.info("Shutdown signal received")
+        simulator.is_running = False
+
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        try:
+            loop.add_signal_handler(sig, request_stop)
+            registered_signals.append(sig)
+        except (NotImplementedError, RuntimeError):
+            pass
     
     try:
         # Run simulator
@@ -106,6 +154,17 @@ async def run_strategy(
         # Skip report if paper simulator exited due to WebSocket failure
         if getattr(simulator, "websocket_connection_failed", False):
             logger.info("Simulator exited due to WebSocket connection failure.")
+            return
+        if getattr(simulator, "startup_failure_reason", None):
+            logger.error(
+                "Simulator failed startup: %s", simulator.startup_failure_reason
+            )
+            return
+        if getattr(simulator, "feed_failure_reason", None):
+            logger.error(
+                "Simulator stopped because live data became unsafe: %s",
+                simulator.feed_failure_reason,
+            )
             return
         
         # Generate report
@@ -121,6 +180,9 @@ async def run_strategy(
     except Exception as e:
         logger.error(f"Error running strategy: {e}", exc_info=True)
         await simulator.stop()
+    finally:
+        for sig in registered_signals:
+            loop.remove_signal_handler(sig)
 
 
 def main():
@@ -189,7 +251,7 @@ def main():
     parser.add_argument(
         "--bounds-file",
         type=str,
-        default="data/kalshi_market_bounds.json",
+        default=None,
         help="(Paper mode) JSON file with lower/upper/eod bounds for the target market",
     )
     parser.add_argument(
@@ -207,6 +269,14 @@ def main():
     )
 
     args = parser.parse_args()
+
+    if (
+        args.mode == "paper"
+        and args.strategy == "market_making_as"
+        and not args.markets
+        and not args.markets_file
+    ):
+        parser.error("market_making_as paper mode requires --markets")
 
     raw = get_raw_markets(args.markets, args.markets_file, default_markets_file)
     markets = resolve_market_list(raw)

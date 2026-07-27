@@ -1,12 +1,24 @@
 """API credentials management"""
 
 import os
+from pathlib import Path
 from typing import Optional
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+# Load repository credentials regardless of the process working directory.
+load_dotenv(PROJECT_ROOT / ".env")
+
+
+def _credential_path(value: Optional[str]) -> Optional[str]:
+    if not value:
+        return None
+    path = Path(value).expanduser()
+    if not path.is_absolute():
+        path = PROJECT_ROOT / path
+    return str(path.resolve())
 
 
 class KalshiCredentials(BaseModel):
@@ -77,7 +89,7 @@ class Credentials(BaseModel):
                 ws_url = "wss://api.calendar.kalshi.com/trade-api/ws/v2"
             kalshi = KalshiCredentials(
                 api_key=kalshi_key,
-                private_key_path=kalshi_pem_path,
+                private_key_path=_credential_path(kalshi_pem_path),
                 base_url=base_url,
                 ws_url=ws_url
             )
@@ -100,7 +112,7 @@ class Credentials(BaseModel):
                 app_key=schwab_key,
                 app_secret=schwab_secret,
                 callback_url=os.getenv("CALLBACK_URL") or os.getenv("SCHWAB_CALLBACK_URL"),
-                token_path=os.getenv("SCHWAB_TOKEN_PATH"),
+                token_path=_credential_path(os.getenv("SCHWAB_TOKEN_PATH")),
             )
         
         return cls(kalshi=kalshi, polymarket=polymarket, schwab=schwab)

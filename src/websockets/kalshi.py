@@ -5,7 +5,7 @@ import json
 import base64
 import time
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 
 from cryptography.hazmat.primitives import serialization, hashes
@@ -41,8 +41,10 @@ class KalshiWebSocket(BaseWebSocketManager):
         self._private_key = None  # Loaded lazily
         self.market_subscriptions: Dict[str, Dict[str, Any]] = {}
         self._msg_id = 0
+        self._use_yes_price = True
         # Per-market orderbook state for orderbook_delta: market_id -> {bids: {price: size}, asks: {price: size}}
         self._orderbook_state: Dict[str, Dict[str, Dict[float, float]]] = {}
+        self._orderbook_sequences: Dict[str, int] = {}
     
     def _load_private_key(self):
         """Load RSA private key from PEM file."""
@@ -82,6 +84,11 @@ class KalshiWebSocket(BaseWebSocketManager):
         """Kalshi auth is done via headers on connect; no post-connect auth message."""
         self.logger.info("Kalshi authentication (via connection headers) successful")
         return True
+
+    def _on_connection_lost(self) -> None:
+        """Discard books that cannot safely be continued across a reconnect."""
+        self._orderbook_state.clear()
+        self._orderbook_sequences.clear()
     
     async def subscribe(self, channel: str, **kwargs) -> bool:
         """Subscribe to a Kalshi channel. For orderbook use subscribe_orderbook_delta instead (correct API format)."""
@@ -106,7 +113,12 @@ class KalshiWebSocket(BaseWebSocketManager):
         """Subscribe to orderbook_delta channel (Kalshi format: cmd/subscribe, params with channels + market_ticker(s))."""
         try:
             self._msg_id += 1
-            params: Dict[str, Any] = {"channels": ["orderbook_delta"]}
+            params: Dict[str, Any] = {
+                "channels": ["orderbook_delta"],
+                # Keep YES bids and implied YES asks on one price scale. Without
+                # this, Kalshi reports NO levels in NO-leg prices.
+                "use_yes_price": self._use_yes_price,
+            }
             if len(market_tickers) == 1:
                 params["market_ticker"] = market_tickers[0]
             else:
@@ -214,8 +226,22 @@ class KalshiWebSocket(BaseWebSocketManager):
             self.logger.error("Error parsing message: %s", e, exc_info=True)
             return None
 
-    def _state_to_orderbook_event(self, market_id: str) -> WebSocketEvent:
+    @staticmethod
+    def _message_timestamp(data: Dict[str, Any]) -> datetime:
+        msg = data.get("msg") or {}
+        ts_ms = msg.get("ts_ms") or data.get("ts_ms")
+        if ts_ms is not None:
+            try:
+                return datetime.fromtimestamp(float(ts_ms) / 1000.0, tz=timezone.utc)
+            except (TypeError, ValueError, OSError):
+                pass
+        return datetime.now(timezone.utc)
+
+    def _state_to_orderbook_event(
+        self, market_id: str, timestamp: Optional[datetime] = None
+    ) -> WebSocketEvent:
         """Build ORDERBOOK_UPDATE event from current _orderbook_state for market_id."""
+        event_time = timestamp or datetime.now(timezone.utc)
         state = self._orderbook_state.get(market_id, {"bids": {}, "asks": {}})
         bids = [
             OrderBookLevel(price=p, size=s, orders=1)
@@ -230,15 +256,26 @@ class KalshiWebSocket(BaseWebSocketManager):
         orderbook = OrderBook(
             market_id=market_id,
             platform=Platform.KALSHI,
-            timestamp=datetime.utcnow(),
+            timestamp=event_time,
             bids=bids,
             asks=asks,
         )
         return WebSocketEvent(
             event_type=WebSocketEventType.ORDERBOOK_UPDATE,
             data={"orderbook": orderbook.model_dump()},
-            timestamp=datetime.utcnow(),
+            timestamp=event_time,
             market_id=market_id,
+        )
+
+    def _emit_orderbook_error(self, market_id: str, reason: str) -> None:
+        event_time = datetime.now(timezone.utc)
+        self._emit_event(
+            WebSocketEvent(
+                event_type=WebSocketEventType.ERROR,
+                data={"reason": reason, "market_id": market_id},
+                timestamp=event_time,
+                market_id=market_id,
+            )
         )
 
     def _parse_orderbook_snapshot(self, data: Dict[str, Any]) -> Optional[WebSocketEvent]:
@@ -258,6 +295,18 @@ class KalshiWebSocket(BaseWebSocketManager):
         state = self._orderbook_state.setdefault(market_id, {"bids": {}, "asks": {}})
         state["bids"] = {}
         state["asks"] = {}
+        seq = data.get("seq")
+        try:
+            self._orderbook_sequences[market_id] = int(seq)
+        except (TypeError, ValueError):
+            self.logger.error(
+                "Ignoring Kalshi snapshot with invalid sequence for %s: %r",
+                market_id,
+                seq,
+            )
+            self._orderbook_sequences.pop(market_id, None)
+            self._emit_orderbook_error(market_id, "invalid_snapshot_sequence")
+            return None
 
         # Prefer the documented keys (yes_dollars_fp/no_dollars_fp).
         # Some payloads place depth fields at the top-level instead of under `msg`.
@@ -296,7 +345,9 @@ class KalshiWebSocket(BaseWebSocketManager):
                     if s > 0:
                         state["asks"][p] = s
 
-        return self._state_to_orderbook_event(market_id)
+        return self._state_to_orderbook_event(
+            market_id, timestamp=self._message_timestamp(data)
+        )
 
     def _parse_orderbook_delta(self, data: Dict[str, Any]) -> Optional[WebSocketEvent]:
         """Kalshi orderbook_delta.
@@ -314,7 +365,36 @@ class KalshiWebSocket(BaseWebSocketManager):
         if not market_id:
             return None
         state = self._orderbook_state.setdefault(market_id, {"bids": {}, "asks": {}})
+        seq = data.get("seq")
+        try:
+            seq_int = int(seq)
+        except (TypeError, ValueError):
+            self.logger.error("Ignoring invalid Kalshi sequence for %s: %r", market_id, seq)
+            self._emit_orderbook_error(market_id, "invalid_delta_sequence")
+            return None
+        previous = self._orderbook_sequences.get(market_id)
+        if previous is None:
+            self.logger.warning(
+                "Ignoring Kalshi delta for %s before snapshot", market_id
+            )
+            self._emit_orderbook_error(market_id, "delta_before_snapshot")
+            return None
+        if seq_int != previous + 1:
+            self.logger.error(
+                "Kalshi orderbook sequence gap for %s: expected %s, got %s; waiting for snapshot",
+                market_id,
+                previous + 1,
+                seq_int,
+            )
+            self._orderbook_state[market_id] = {"bids": {}, "asks": {}}
+            self._orderbook_sequences.pop(market_id, None)
+            self._emit_orderbook_error(market_id, "orderbook_sequence_gap")
+            return None
+        self._orderbook_sequences[market_id] = seq_int
         side = (msg.get("side") or data.get("side") or "").strip().lower()
+        if side not in {"yes", "no"}:
+            self.logger.warning("Ignoring Kalshi delta with invalid side %r", side)
+            return None
         side_key = "bids" if side == "yes" else "asks"
 
         price_dollars = msg.get("price_dollars") if "price_dollars" in msg else data.get("price_dollars")
@@ -332,7 +412,9 @@ class KalshiWebSocket(BaseWebSocketManager):
             book.pop(price, None)
         else:
             book[price] = current
-        return self._state_to_orderbook_event(market_id)
+        return self._state_to_orderbook_event(
+            market_id, timestamp=self._message_timestamp(data)
+        )
 
     def _parse_orderbook(self, data: Dict[str, Any]) -> WebSocketEvent:
         """Legacy: parse order book with top-level bids/asks (if API ever sends that)."""
@@ -360,36 +442,65 @@ class KalshiWebSocket(BaseWebSocketManager):
         orderbook = OrderBook(
             market_id=market_id,
             platform=Platform.KALSHI,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             bids=bids,
             asks=asks,
         )
         return WebSocketEvent(
             event_type=WebSocketEventType.ORDERBOOK_UPDATE,
             data={"orderbook": orderbook.model_dump()},
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             market_id=market_id,
         )
     
     def _parse_trade(self, data: Dict[str, Any]) -> WebSocketEvent:
         """Parse trade update"""
-        market_id = data.get("market_id") or data.get("channel", "").split(".")[-1]
+        msg = data.get("msg") or data
+        market_id = (
+            msg.get("market_ticker")
+            or msg.get("market_id")
+            or data.get("market_id")
+            or data.get("channel", "").split(".")[-1]
+        )
+        ts_ms = msg.get("ts_ms")
+        if ts_ms is not None:
+            timestamp = datetime.fromtimestamp(float(ts_ms) / 1000.0, tz=timezone.utc)
+        elif msg.get("ts") is not None:
+            ts_value = float(msg["ts"])
+            if ts_value > 10_000_000_000:
+                ts_value /= 1000.0
+            timestamp = datetime.fromtimestamp(ts_value, tz=timezone.utc)
+        else:
+            timestamp = datetime.now(timezone.utc)
+
+        taker_side = str(
+            msg.get("taker_outcome_side") or msg.get("taker_side") or ""
+        ).lower()
+        taker_book_side = str(msg.get("taker_book_side") or "").lower()
+        is_yes_taker = taker_side == "yes" or taker_book_side == "bid"
         
+        if msg.get("yes_price_dollars") is not None:
+            trade_price = float(msg["yes_price_dollars"])
+        else:
+            trade_price = float(msg.get("price", 0))
+            if trade_price > 1.0:
+                trade_price /= 100.0
+
         trade = Trade(
-            trade_id=data.get("trade_id", ""),
+            trade_id=msg.get("trade_id", ""),
             market_id=market_id,
             platform=Platform.KALSHI,
-            side=OrderSide.BUY if data.get("side") == "buy" else OrderSide.SELL,
-            price=float(data.get("price", 0)),
-            size=float(data.get("size", 0)),
-            timestamp=datetime.fromisoformat(data.get("timestamp", datetime.utcnow().isoformat())),
-            fees=float(data.get("fees", 0))
+            side=OrderSide.BUY if is_yes_taker else OrderSide.SELL,
+            price=trade_price,
+            size=float(msg.get("count_fp", msg.get("size", 0))),
+            timestamp=timestamp,
+            fees=float(msg.get("fees", 0)),
         )
         
         return WebSocketEvent(
             event_type=WebSocketEventType.TRADE,
             data={"trade": trade.model_dump()},
-            timestamp=datetime.utcnow(),
+            timestamp=timestamp,
             market_id=market_id
         )
     

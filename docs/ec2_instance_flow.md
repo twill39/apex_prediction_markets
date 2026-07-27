@@ -59,13 +59,19 @@ KALSHI_PRIVATE_KEY_PATH=/home/ubuntu/apex_prediction_markets/kalshi_private_key.
 APP_KEY=your-schwab-app-key
 APP_SECRET=your-schwab-app-secret
 CALLBACK_URL=https://127.0.0.1
+SCHWAB_TOKEN_PATH=/home/ubuntu/.schwabdev/tokens.db
 
 SIMULATOR_USE_KALSHI=True
 SIMULATOR_USE_POLYMARKET=False
 SIMULATOR_USE_SCHWAB_SPX=True
+SIMULATOR_MARKET_DATA_STALE_SECONDS=60
+SIMULATOR_FEED_DISCONNECT_GRACE_SECONDS=60
+MARKET_MAKING_AS_INVENTORY_OVERLAYS_ENABLED=True
 
 LOG_LEVEL=INFO
-LOG_FILE=./logs/paper_trading.log
+LOG_FILE=/home/ubuntu/apex_prediction_markets/logs/paper_trading.log
+DATABASE_PATH=/home/ubuntu/apex_prediction_markets/data/trading_fund.db
+SIMULATOR_BOUNDS_FILE=/home/ubuntu/apex_prediction_markets/data/kalshi_market_bounds.json
 ```
 
 Verify:
@@ -73,6 +79,7 @@ Verify:
 ```bash
 ls -la .env
 ls -la "$KALSHI_PRIVATE_KEY_PATH"
+ls -la "$SCHWAB_TOKEN_PATH"
 ```
 
 ---
@@ -136,9 +143,9 @@ python scripts/run_strategy.py \
   --spx-stream
 ```
 
-Runs until you stop it (Ctrl+C) or the SSH session ends.
+Runs until you stop it with Ctrl+C. Use tmux or systemd below before disconnecting SSH.
 
-**Optional:** auto-stop after the session (e.g. 390 min ≈ 9:30–16:00 ET):
+**Optional:** auto-stop after the session when starting at 09:30 ET (390 min):
 
 ```bash
 python scripts/run_strategy.py \
@@ -147,7 +154,7 @@ python scripts/run_strategy.py \
   --markets "YOUR-TICKER" \
   --bounds-file data/kalshi_market_bounds.json \
   --spx-stream \
-  --duration 410
+  --duration 390
 ```
 
 ### Step 4 — Use tmux so disconnect does not kill the run
@@ -181,6 +188,7 @@ Healthy startup log lines:
 - `Loaded bounds for 1 market(s) from kalshi_market_bounds.json`
 - `Started Schwab SPX feed for $SPX`
 - `Injected band bounds for YOUR-TICKER (lower=... upper=...)`
+- a fresh orderbook snapshot at startup; disconnects cancel pending paper orders until a post-reconnect snapshot arrives
 
 When the run ends, a performance report prints to the terminal (and appears in logs if you redirected stdout).
 
@@ -233,10 +241,11 @@ python scripts/run_strategy.py \
 | SSH connection refused | Instance stopped, wrong IP, or security group blocks your IP |
 | `Could not load simulator because of bad websocket connection` | Kalshi credentials, network egress, or `KALSHI_WS_URL` |
 | `Bounds file not found` | Run `fetch_kalshi_market_bounds.py` first |
-| Quotes use orderbook mid only (no band model) | Missing bounds injection or no SPX price yet |
+| Quotes use orderbook mid only (no band model) | No fresh SPX price; stale SPX intentionally falls back to the book |
 | `Failed to start Schwab SPX feed` | Missing `APP_KEY`/`APP_SECRET` or expired OAuth tokens |
 | `SPX feed stale` | Stream quiet; REST poll fallback should still update ~every 5s |
 | Process died after closing laptop | Forgot tmux — restart inside `tmux new -s paper` |
+| `Stopping paper trading because live data is unsafe` | WebSocket reconnect budget expired or no fresh snapshot arrived after startup/reconnect |
 
 ---
 

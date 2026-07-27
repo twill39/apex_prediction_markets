@@ -6,6 +6,7 @@ import json
 import threading
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Callable, Optional
 
 from src.config import get_credentials
@@ -158,9 +159,15 @@ class SchwabSpxStream:
         import schwabdev
 
         schwab = credentials.schwab
+        kwargs = {"open_browser_for_auth": False}
         if schwab.callback_url:
-            return schwabdev.Client(schwab.app_key, schwab.app_secret, schwab.callback_url)
-        return schwabdev.Client(schwab.app_key, schwab.app_secret)
+            kwargs["callback_url"] = schwab.callback_url
+        if schwab.token_path:
+            token_path = Path(schwab.token_path).expanduser()
+            if token_path.is_dir():
+                token_path = token_path / "tokens.db"
+            kwargs["tokens_db"] = str(token_path)
+        return schwabdev.Client(schwab.app_key, schwab.app_secret, **kwargs)
 
     def _emit_price(self, price: float, ts: Optional[datetime] = None) -> None:
         if price <= 0 or self._on_price is None:
